@@ -1,17 +1,32 @@
 import math
 
-from collections import namedtuple
-
-DronePosition = namedtuple("DronePosition", "x y z")
-DroneVelocity = namedtuple("DroneVelocity", "dx dy dz")
+from utils import DronePosition, DroneVelocity
 
 class Drone:
-    def __init__(self, flight_zone, uri) -> None:
+    def __init__(self, flight_zone, uri, DEBUG = False) -> None:
         self.flight_zone = flight_zone
         self.uri = uri
+        self.DEBUG = DEBUG
         
         self.position = DronePosition(0, 0, 0)
         self.velocity = DroneVelocity(0, 0, 0)
+
+    def dprint(self, message):
+        if self.DEBUG:
+            print(message)
+
+    def random_init(self):
+        self.position = DronePosition(
+                random.random() * self.flight_zone.x - self.flight_zone.x/2,
+                random.random() * self.flight_zone.y - self.flight_zone.y/2,
+                (random.random() * self.flight_zone.z) + self.flight_zone.floor_offset
+                )
+
+        self.velocity = DroneVelocity(
+                random.randint(-5, 5),
+                random.randint(-5, 5),
+                random.randint(-5, 5)
+                )
 
     def distance_to_swarm(self, boid_positions):
         """
@@ -37,3 +52,6 @@ class Drone:
 
     def get_velocity(self):
         return self.velocity
+
+    def set_new_position(self):
+        raise NotImplementedError
