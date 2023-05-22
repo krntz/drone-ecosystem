@@ -49,6 +49,16 @@ class ReadMem:
             helper.read_all_calibs(self._calib_read_ready)
             self._event.wait()
 
+        self.geo_dict = {}
+        
+        for i, geo in self.geo_data.items():
+            geo_dict[i] = geo.as_file_object()
+        
+        self.calib_dict = {}
+
+        for i, calib in self.calib_data.items():
+            calib_dict[i] = calib.as_file_object()
+
     def _geo_read_ready(self, geo_data):
         self.geo_data = geo_data
         self._event.set()
@@ -58,20 +68,13 @@ class ReadMem:
         self._event.set()
     
     def toFile(self, fn):
-        geo_dict = {}
-        
-        for i, geo in self.geo_data.items():
-            geo_dict[i] = geo.as_file_object()
-        
-        calib_dict = {}
-
-        for i, calib in self.calib_data.items():
-            calib_dict[i] = calib.as_file_object()
-        
-        file_dict = {"geos" : geo_dict, "calibs": calib_dict}
+        file_dict = {"geos" : self.geo_dict, "calibs": self.calib_dict}
 
         with open(fn, 'w') as f:
             yaml.dump(file_dict, f)
+
+    def getGeoAndCalib(self):
+        return self.geo_dict, self.calib_dict
 
 def ReadFromFile(fn):
     with open(fn, 'r') as f:
