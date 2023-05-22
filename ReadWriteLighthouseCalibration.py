@@ -50,18 +50,10 @@ class ReadMem:
             self._event.wait()
 
     def _geo_read_ready(self, geo_data):
-        #for id, data in geo_data.items():
-        #    print('---- Geometry for base station', id + 1)
-        #    data.dump()
-        #    print()
         self.geo_data = geo_data
         self._event.set()
 
     def _calib_read_ready(self, calib_data):
-        #for id, data in calib_data.items():
-        #    print('---- Calibration data for base station', id + 1)
-        #    data.dump()
-        #    print()
         self.calib_data = calib_data
         self._event.set()
     
@@ -121,6 +113,8 @@ def ReadFromFile(fn):
 
 
 if __name__ == "__main__":
+    # TODO: Sort out parameters etc. to allow choosing to read and/or write to/from a drone or file
+
     cflib.crtp.init_drivers()
     mem = ReadMem()
     mem.toFile("config.yaml")
