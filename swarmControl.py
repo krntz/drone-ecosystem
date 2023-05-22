@@ -20,44 +20,64 @@ class SwarmControl:
     def __init__(self, 
                  uris, 
                  flightZone,
-                 configFileName) -> None:
+                 config,
+                 DEBUG = False) -> None:
         self.uris = uris
+        self.DEBUG = DEBUG
+        self.swarm_flying = False
 
-        if type(flightZone) is FlightZone:
-            self.flightZone = flightZone
-        else:
-            raise ValueError("flightZone type should be namedtuple FlightZone")
+        if type(flightZone) is not FlightZone:
+            raise TypeError("flightZone type should be namedtuple FlightZone")
+        
+        self.flightZone = flightZone
 
         cflib.crtp.init_drivers()
+
+        # Grab calibration data directly from drone
+        # if there is a file with saved calibration data, use that instead
+        if config.startswith("radio://"):
+            self.dprint("Getting calibration data from drone with URI: " + config)
+            mem = ReadWriteLighthouseCalibration.ReadMem(config)
+            geo_dict, calib_dict = mem.getGeoAndCalib()
+        else:
+            self.dprint("Getting calibration data from file: " + config)
+            geo_dict, calib_dict = ReadWriteLighthouseCalibration.ReadFromFile(config)
+
         factory = CachedCfFactory(rw_cache='./cache')
 
         self.swarm = Swarm(uris, factory=factory)
-    
-        self.deck_attached_event = Event()
 
         self.swarm.open_links()
 
-        #TODO: Make it possible to switch between reading from file and reading directly from drone
-        geo_dict, calib_dict = ReadWriteCalibration.ReadFromFile(configFileName)
-
+        # Write calibration data to swarm
+        self.dprint("Writing calibration data to swarm")
         args = {}
         for uri in self.uris:
             args[uri] = [geo_dict, calib_dict]
 
-        self.swarm.parallel_safe(ReadWriteCalibration.WriteMem, args)
+        self.swarm.parallel_safe(ReadWriteLighthouseCalibration.WriteMem, args)
 
         self.safety_checks()
 
         self.swarm_flying = False
 
     def __del__(self):
-        print("Deleting")
-        if self.swarm_flying:
-            self.swarm_land()
-            time.sleep(2)
-            self.swarm_flying = False
+        self.dprint("Deleting")
+
+        # Assume the swarm is flying when garbage collecting to prevent
+        # flying without control software
+        self.swarm_land()
+        time.sleep(2)
+        self.swarm_flying = False
         
         self.swarm.close_links()
+
+    def dprint(self, message):
+        """
+        Only print message if we're in debug mode
+        """
+        if self.DEBUG:
+            print(message)
 
     def safety_checks(self):
         """
@@ -91,6 +111,8 @@ class SwarmControl:
 
     def __deck_check(self, scf):
 
+        self.deck_attached_event = Event()
+
         scf.cf.param.add_update_callback(group="deck", 
                                          name="bcLighthouse4", 
                                          cb=self.__param_deck_lighthouse)
@@ -106,6 +128,7 @@ class SwarmControl:
         time.sleep(3)
 
     def swarm_take_off(self):
+        self.dprint("Swarm is taking off")
         if not self.swarm_flying:
             self.swarm.parallel_safe(self.__take_off)
             self.swarm_flying = True
@@ -121,6 +144,7 @@ class SwarmControl:
 
     def swarm_land(self):
         if self.swarm_flying:
+            self.dprint("Landing swarm")
             self.swarm.parallel_safe(self.__land)
             self.swarm_flying = False
         else:
@@ -128,12 +152,18 @@ class SwarmControl:
         
     def distribute_swarm(self):
         """
-        Distributes the swarm inside the flight zone in a way that should avoid mid-air collision.
-        Requires the swarm to be flying
+        Distributes the swarm inside the flight zone in a way that should avoid
+        mid-air collision.
+
+        Requires the swarm to be flying.
         """
+
+        #TODO: Might want to distribute along XY-plane as well?
 
         if not self.swarm_flying:
             raise RuntimeError("Cannot distribute swarm across flight zone, swarm is not flying!")
+
+        self.dprint("Distributing swarm across the height of the flight zone")
 
         numDrones = len(self.uris)
         
@@ -164,34 +194,30 @@ class SwarmControl:
 if __name__ == '__main__':
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
-        'radio://0/80/2M/E7E7E7E7E1',
-        'radio://0/80/2M/E7E7E7E7E2',
-        'radio://0/80/2M/E7E7E7E7E3',
-        'radio://0/80/2M/E7E7E7E7E4',
-        'radio://0/80/2M/E7E7E7E7E5',
-        'radio://0/80/2M/E7E7E7E7E6',
-        #'radio://0/80/2M/E7E7E7E7E7',
-        'radio://0/80/2M/E7E7E7E7E8',
+        #'radio://0/80/2M/E7E7E7E7E1',
+        #'radio://0/80/2M/E7E7E7E7E2',
+        #'radio://0/80/2M/E7E7E7E7E3',
+        #'radio://0/80/2M/E7E7E7E7E4',
+        #'radio://0/80/2M/E7E7E7E7E5',
+        #'radio://0/80/2M/E7E7E7E7E6',
+        ##'radio://0/80/2M/E7E7E7E7E7',
+        #'radio://0/80/2M/E7E7E7E7E8',
     }
     
     logging.basicConfig(level=logging.ERROR)
     s = SwarmControl(uris, 
-                     FlightZone(2.0, 3.0, 1.75, 0.2), 
-                     "4-lighthouses.yaml")
+                     FlightZone(2.0, 3.0, 1.75, 0.2),
+                     'radio://0/80/2M/E7E7E7E7E0',
+                     DEBUG = True)
     
     try:
-        print("Taking off")
         s.swarm_take_off()
         time.sleep(2)
-        print("Distributing swarm")
         s.distribute_swarm()
         time.sleep(2)
-        print("Landing")
         s.swarm_land()
-        print("Landed")
     except Exception as e:
         print(e)
-        print("Landing swarm!")
         s.swarm_land()
     finally:
         s.swarm.close_links()

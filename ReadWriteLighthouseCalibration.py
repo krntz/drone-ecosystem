@@ -34,6 +34,7 @@ class WriteMem:
 
 class ReadMem:
     def __init__(self, uri = "radio://0/80/2M/E7E7E7E7E0"):
+
         self._event = Event()
         self.geo_data = None
         self.calib_data = None
@@ -49,15 +50,6 @@ class ReadMem:
             helper.read_all_calibs(self._calib_read_ready)
             self._event.wait()
 
-        self.geo_dict = {}
-        
-        for i, geo in self.geo_data.items():
-            geo_dict[i] = geo.as_file_object()
-        
-        self.calib_dict = {}
-
-        for i, calib in self.calib_data.items():
-            calib_dict[i] = calib.as_file_object()
 
     def _geo_read_ready(self, geo_data):
         self.geo_data = geo_data
@@ -68,13 +60,24 @@ class ReadMem:
         self._event.set()
     
     def toFile(self, fn):
-        file_dict = {"geos" : self.geo_dict, "calibs": self.calib_dict}
+        geo_dict = {}
+        
+        for i, geo in self.geo_data.items():
+            geo_dict[i] = geo.as_file_object()
+        
+        calib_dict = {}
+
+        for i, calib in self.calib_data.items():
+            calib_dict[i] = calib.as_file_object()
+
+        file_dict = {"geos" : geo_dict, "calibs": calib_dict}
 
         with open(fn, 'w') as f:
             yaml.dump(file_dict, f)
 
+
     def getGeoAndCalib(self):
-        return self.geo_dict, self.calib_dict
+        return self.geo_data, self.calib_data
 
 def ReadFromFile(fn):
     with open(fn, 'r') as f:
