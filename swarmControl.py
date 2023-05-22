@@ -1,19 +1,16 @@
+import ReadWriteLighthouseCalibration
+
+import logging, math, time
+
 import cflib.crtp
 from cflib.crazyflie.swarm import CachedCfFactory
 from cflib.crazyflie.swarm import Swarm
-
-import logging
-import math
-import time
 
 from threading import Event
 
 from collections import namedtuple
 
-import ReadWriteCalibration
-
 FlightZone = namedtuple("FlightZone", "x y z floorOffset")
-
 
 class SwarmControl:
     """
