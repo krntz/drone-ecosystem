@@ -1,50 +1,51 @@
-import ReadWriteLighthouseCalibration
-from boid import Boid
-
-import logging, math, time, sys
-
-import cflib.crtp
-from cflib.crazyflie.swarm import CachedCfFactory
-from cflib.crazyflie.swarm import Swarm
-
+import logging
+import time
 from threading import Event
 
-from collections import namedtuple
+import cflib.crtp
+from cflib.crazyflie.swarm import CachedCfFactory, Swarm
 
-FlightZone = namedtuple("FlightZone", "x y z floor_offset")
+import ReadWriteLighthouseCalibration
+from boid import Boid
+from utils import DronePosition, FlightZone
+
 
 class SwarmControl:
     """
     Controller class for setting up, managing, and shutting down swarms
     """
-    
-    def __init__(self, 
-                 uris, 
+
+    def __init__(self,
+                 uris,
                  flight_zone,
                  config,
-                 DEBUG = False) -> None:
+                 DEBUG=False) -> None:
         self.uris = uris
         self.DEBUG = DEBUG
         self.swarm_flying = False
 
         if type(flight_zone) is not FlightZone:
             raise TypeError("flight_zone type should be namedtuple FlightZone")
-        
+
         self.flight_zone = flight_zone
 
         cflib.crtp.init_drivers()
 
         # Grab calibration data directly from drone
         # if there is a file with saved calibration data, use that instead
+
         if len(self.uris) > 1:
             try:
                 if config.startswith("radio://"):
-                    self.dprint("Getting calibration data from drone with URI: " + config)
+                    self.dprint(
+                        "Getting calibration data from drone with URI: " + config)
                     mem = ReadWriteLighthouseCalibration.ReadMem(config)
                     geo_dict, calib_dict = mem.getGeoAndCalib()
                 else:
-                    self.dprint("Getting calibration data from file: " + config)
-                    geo_dict, calib_dict = ReadWriteLighthouseCalibration.ReadFromFile(config)
+                    self.dprint(
+                        "Getting calibration data from file: " + config)
+                    geo_dict, calib_dict = ReadWriteLighthouseCalibration.ReadFromFile(
+                        config)
             except Exception as e:
                 raise e
         else:
@@ -57,13 +58,16 @@ class SwarmControl:
         self.swarm.open_links()
 
         # Write calibration data to swarm
+
         if len(self.uris) > 1:
             self.dprint("Writing calibration data to swarm")
             args = {}
+
             for uri in self.uris:
                 args[uri] = [geo_dict, calib_dict]
 
-            self.swarm.parallel_safe(ReadWriteLighthouseCalibration.WriteMem, args)
+            self.swarm.parallel_safe(
+                ReadWriteLighthouseCalibration.WriteMem, args)
 
         self.safety_checks()
 
@@ -86,6 +90,7 @@ class SwarmControl:
         """
         Only print message if we're in debug mode
         """
+
         if self.DEBUG:
             print(message)
 
@@ -100,13 +105,13 @@ class SwarmControl:
         print("Running light check. Ensure red light on all connected drones.")
         self.swarm.parallel_safe(self.__light_check)
 
-        ## TODO: This aint working for some reason...
-        #print("Checking for Lighthouse deck")
-        #self.swarm.parallel_safe(self.__deck_check)
+        # TODO: This aint working for some reason...
+        # print("Checking for Lighthouse deck")
+        # self.swarm.parallel_safe(self.__deck_check)
 
         print("Resetting estimators. Will block until good lock on position.")
         self.swarm.reset_estimators()
-    
+
     def __light_check(self, scf):
         scf.cf.param.set_value('led.bitmask', 255)
         time.sleep(2)
@@ -123,8 +128,8 @@ class SwarmControl:
 
         self.deck_attached_event = Event()
 
-        scf.cf.param.add_update_callback(group="deck", 
-                                         name="bcLighthouse4", 
+        scf.cf.param.add_update_callback(group="deck",
+                                         name="bcLighthouse4",
                                          cb=self.__param_deck_lighthouse)
         time.sleep(1)
 
@@ -139,12 +144,13 @@ class SwarmControl:
 
     def swarm_take_off(self):
         self.dprint("Swarm is taking off")
+
         if not self.swarm_flying:
             self.swarm.sequential(self.__take_off)
             self.swarm_flying = True
         else:
             raise RuntimeError("Swarm is already flying!")
-    
+
     def __land(self, scf):
         commander = scf.cf.high_level_commander
 
@@ -159,100 +165,116 @@ class SwarmControl:
             self.swarm_flying = False
         else:
             raise RuntimeError("Swarm has already landed!")
-        
+
     def distribute_swarm(self, drones):
         """
-        Distributes the swarm inside the flight zone in a way that should avoid
-        mid-air collision.
+        Moves the swarm to their positions in a way that *should* avoid mid-air collisions.
 
         Requires the swarm to be flying.
         """
 
         if not self.swarm_flying:
-            raise RuntimeError("Cannot distribute swarm across flight zone, swarm is not flying!")
+            raise RuntimeError(
+                "Cannot distribute swarm across flight zone, swarm is not flying!")
 
         self.dprint("Distributing swarm across the height of the flight zone")
 
         num_drones = len(drones)
-        
+
         zone_width = self.flight_zone.x
         zone_length = self.flight_zone.y
         zone_height = self.flight_zone.z
 
         height_fragment_size = zone_height/num_drones
 
-        current_positions = self.swarm.get_estimated_positions()
-        new_positions = {d.get_uri():d.get_position() for d in drones}
+        current_positions = self.get_positions()
+        new_positions = {d.get_uri(): d.get_position() for d in drones}
 
+        # TODO: Is there a better way of doing this? (Lots of nearly identical code...)
         self.dprint("Separating drones on Z-axis")
-        args = {}
-        for i, drone in enumerate(drones):
-            uri = drone.get_uri()
+        positions = {k: DronePosition(v.x,
+                                      v.y,
+                                      self.flight_zone.floor_offset +
+                                      (i * height_fragment_size),
+                                      0)
 
-            args[uri] = [current_positions[uri].x, 
-                         current_positions[uri].y, 
-                         self.flight_zone.floor_offset + (i * height_fragment_size)
-                         ]
-        
-        self.swarm.parallel_safe(self.__move, args)
-        time.sleep(2)
+                     for i, (k, v) in enumerate(current_positions.items())}
+
+        self.swarm_move_absolute(positions, 2)
 
         self.dprint("Moving drones to final XY-positions")
-        args = {}
-        for i, drone in enumerate(drones):
-            uri = drone.get_uri()
+        positions = {k: DronePosition(new_positions[uri].x,
+                                      new_positions[uri].y,
+                                      self.flight_zone.floor_offset +
+                                      (i * height_fragment_size),
+                                      0)
 
-            args[uri] = [new_positions[uri].x,
-                         new_positions[uri].y,
-                         self.flight_zone.floor_offset + (i * height_fragment_size)
-                         ]
-        
-        self.swarm.parallel_safe(self.__move, args)
-        time.sleep(2)
+                     for i, (k, v) in enumerate(current_positions.items())}
+
+        #positions = {}
+
+        #for i, drone in enumerate(drones):
+        #    uri = drone.get_uri()
+
+        #    positions[uri] = DronePosition(new_positions[uri].x,
+        #                                   new_positions[uri].y,
+        #                                   self.flight_zone.floor_offset +
+        #                                   (i * height_fragment_size),
+        #                                   0
+        #                                   )
+
+        self.swarm_move_absolute(positions, 2)
 
         self.dprint("Moving drones to final Z-positions")
-        args = {}
-        for i, drone in enumerate(drones):
-            uri = drone.get_uri()
 
-            args[uri] = [new_positions[uri].x,
-                         new_positions[uri].y,
-                         new_positions[uri].z,
-                         ]
-        
-        self.swarm.parallel_safe(self.__move, args)
-        time.sleep(2)
+        self.swarm_move_absolute(new_positions, 2)
 
-    def __move(self, scf, x, y, z):
+    def __move(self, scf, position, t, relative):
         commander = scf.cf.high_level_commander
 
-        commander.go_to(x, y, z, 0, 2)
-        time.sleep(2)
+        commander.go_to(position.x, position.y, position.z,
+                        position.yaw, t, relative)
+        time.sleep(t)
+
+    def swarm_move_absolute(self, positions, t):
+        if not self.swarm_flying:
+            raise RuntimeError("Swarm must be flying to be moved")
+        # TODO: Would be awesome if this function let you leave some coordinates unchanged
+
+        self.dprint("Moving swarm")
+
+        args = {k: [v, t, False] for k, v in positions.items()}
+
+        self.swarm.parallel_safe(self.__move, args)
 
     def get_positions(self):
-        return self.swarm.get_estimated_positions()
+        positions = self.swarm.get_estimated_positions()
+
+        return {k: DronePosition(v.x, v.y, v.z, 0) for k, v in positions.items()}
+
 
 if __name__ == '__main__':
+    DEBUG = True
+
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
-        #'radio://0/80/2M/E7E7E7E7E1',
-        #'radio://0/80/2M/E7E7E7E7E2',
-        #'radio://0/80/2M/E7E7E7E7E3',
-        #'radio://0/80/2M/E7E7E7E7E4',
-        #'radio://0/80/2M/E7E7E7E7E5',
-        #'radio://0/80/2M/E7E7E7E7E6',
-        ##'radio://0/80/2M/E7E7E7E7E7',
-        #'radio://0/80/2M/E7E7E7E7E8',
+        # 'radio://0/80/2M/E7E7E7E7E1',
+        # 'radio://0/80/2M/E7E7E7E7E2',
+        # 'radio://0/80/2M/E7E7E7E7E3',
+        # 'radio://0/80/2M/E7E7E7E7E4',
+        # 'radio://0/80/2M/E7E7E7E7E5',
+        # 'radio://0/80/2M/E7E7E7E7E6',
+        # 'radio://0/80/2M/E7E7E7E7E7',
+        # 'radio://0/80/2M/E7E7E7E7E8',
     }
-    
+
     logging.basicConfig(level=logging.ERROR)
     flight_zone = FlightZone(2.0, 3.0, 1.75, 0.30)
-    print(uris)
-    s = SwarmControl(uris, 
+    s = SwarmControl(uris,
                      flight_zone,
                      'radio://0/80/2M/E7E7E7E7E0',
-                     DEBUG = True)
-    
+                     DEBUG=DEBUG)
+
     try:
         time_step = 1
 
@@ -261,15 +283,17 @@ if __name__ == '__main__':
         boid_cohesion = 0.005
 
         drones = []
+
         for uri in uris:
             drones.append(
-                    Boid(flight_zone,
-                         uri,
-                         boid_separation,
-                         boid_alignment,
-                         boid_cohesion
-                         )
-                    )
+                Boid(flight_zone,
+                     uri,
+                     DEBUG,
+                     boid_separation,
+                     boid_alignment,
+                     boid_cohesion
+                     )
+            )
 
         for d in drones:
             d.random_init()
@@ -281,14 +305,22 @@ if __name__ == '__main__':
 
         flying = True
 
-        #while flying:
+        # while flying:
+        #    new_positions = []
+
+        #    for d in drones:
+        #        d.set_new_position(s.get_positions())
+
         #    time.sleep(time_step)
         #    pass
-            
+
+        s.swarm_land()
+    except KeyboardInterrupt:
+        print("Exiting")
         s.swarm_land()
     except Exception as e:
-        print(e)
         s.swarm_land()
+        raise e
     finally:
         s.swarm.close_links()
         del s

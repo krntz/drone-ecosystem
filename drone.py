@@ -1,14 +1,17 @@
 import math
+import random
 
 from utils import DronePosition, DroneVelocity
 
+
 class Drone:
-    def __init__(self, flight_zone, uri, DEBUG = False) -> None:
+    def __init__(self, flight_zone, uri, DEBUG=False) -> None:
         self.flight_zone = flight_zone
         self.uri = uri
         self.DEBUG = DEBUG
-        
-        self.position = DronePosition(0, 0, 0)
+
+        self.position = DronePosition(0, 0, 0, 0)
+
         self.velocity = DroneVelocity(0, 0, 0)
 
     def dprint(self, message):
@@ -17,16 +20,25 @@ class Drone:
 
     def random_init(self):
         self.position = DronePosition(
-                random.random() * self.flight_zone.x - self.flight_zone.x/2,
-                random.random() * self.flight_zone.y - self.flight_zone.y/2,
-                (random.random() * self.flight_zone.z) + self.flight_zone.floor_offset
-                )
+            random.random() *
+            self.flight_zone.x -
+            self.flight_zone.x /
+            2,
+            random.random() *
+            self.flight_zone.y -
+            self.flight_zone.y /
+            2,
+            (random.random() *
+             self.flight_zone.z) +
+            self.flight_zone.floor_offset,
+            0
+        )
 
         self.velocity = DroneVelocity(
-                random.randint(-5, 5),
-                random.randint(-5, 5),
-                random.randint(-5, 5)
-                )
+            random.randint(-5, 5),
+            random.randint(-5, 5),
+            random.randint(-5, 5)
+        )
 
     def distance_to_swarm(self, boid_positions):
         """
@@ -34,13 +46,14 @@ class Drone:
         """
 
         distances = [
-                math.sqrt(
-                    (self.position.x - boid.x) ** 2 + 
-                    (self.position.y - boid.y) ** 2 + 
-                    (self.position.z - boid.z) ** 2
-                    )
-                for boid in boids
-                ]
+            math.sqrt(
+                (self.position.x - boid.x) ** 2 +
+                (self.position.y - boid.y) ** 2 +
+                (self.position.z - boid.z) ** 2
+            )
+
+            for boid in boids
+        ]
 
         return distances
 
