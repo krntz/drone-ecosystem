@@ -19,6 +19,38 @@
 #  GNU General Public License for more details.
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+from __future__ import annotations
+
+import logging
+import pickle
+import time
+from threading import Event
+
+import cflib.crtp  # noqa
+import matplotlib.pyplot as plt
+import numpy as np
+from cflib.crazyflie import Crazyflie
+from cflib.crazyflie.mem.lighthouse_memory import LighthouseBsGeometry
+from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
+from cflib.localization.lighthouse_bs_vector import LighthouseBsVectors
+from cflib.localization.lighthouse_config_manager import LighthouseConfigWriter
+from cflib.localization.lighthouse_geometry_solver import \
+    LighthouseGeometrySolver
+from cflib.localization.lighthouse_initial_estimator import \
+    LighthouseInitialEstimator
+from cflib.localization.lighthouse_sample_matcher import \
+    LighthouseSampleMatcher
+from cflib.localization.lighthouse_sweep_angle_reader import (
+    LighthouseSweepAngleAverageReader, LighthouseSweepAngleReader)
+from cflib.localization.lighthouse_system_aligner import \
+    LighthouseSystemAligner
+from cflib.localization.lighthouse_system_scaler import LighthouseSystemScaler
+from cflib.localization.lighthouse_types import (LhCfPoseSample,
+                                                 LhDeck4SensorPositions,
+                                                 LhMeasurement, Pose)
+from cflib.utils import uri_helper
+
 '''
 This functionality is experimental and may not work properly!
 
@@ -41,33 +73,9 @@ received by the Crazyflie before this script is executed.
 
 2. 2 or more base stations
 '''
-from __future__ import annotations
 
-import logging
-import pickle
-import time
-from threading import Event
 
-import numpy as np
 
-import cflib.crtp  # noqa
-from cflib.crazyflie import Crazyflie
-from cflib.crazyflie.mem.lighthouse_memory import LighthouseBsGeometry
-from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
-from cflib.localization.lighthouse_bs_vector import LighthouseBsVectors
-from cflib.localization.lighthouse_config_manager import LighthouseConfigWriter
-from cflib.localization.lighthouse_geometry_solver import LighthouseGeometrySolver
-from cflib.localization.lighthouse_initial_estimator import LighthouseInitialEstimator
-from cflib.localization.lighthouse_sample_matcher import LighthouseSampleMatcher
-from cflib.localization.lighthouse_sweep_angle_reader import LighthouseSweepAngleAverageReader
-from cflib.localization.lighthouse_sweep_angle_reader import LighthouseSweepAngleReader
-from cflib.localization.lighthouse_system_aligner import LighthouseSystemAligner
-from cflib.localization.lighthouse_system_scaler import LighthouseSystemScaler
-from cflib.localization.lighthouse_types import LhCfPoseSample
-from cflib.localization.lighthouse_types import LhDeck4SensorPositions
-from cflib.localization.lighthouse_types import LhMeasurement
-from cflib.localization.lighthouse_types import Pose
-from cflib.utils import uri_helper
 
 REFERENCE_DIST = 1.0
 
@@ -111,7 +119,8 @@ def record_angles_sequence(scf: SyncCrazyflie, recording_time_s: float) -> list[
 
     def ready_cb(bs_id: int, angles: LighthouseBsVectors):
         now = time.time()
-        measurement = LhMeasurement(timestamp=now, base_station_id=bs_id, angles=angles)
+        measurement = LhMeasurement(
+            timestamp=now, base_station_id=bs_id, angles=angles)
         result.append(measurement)
         bs_seen.add(str(bs_id + 1))
 
@@ -181,7 +190,6 @@ def visualize(cf_poses: list[Pose], bs_poses: list[Pose]):
     # Requires PyPlot
     visualize_positions = False
     if visualize_positions:
-        import matplotlib.pyplot as plt
 
         positions = np.array(list(map(lambda x: x.translation, cf_poses)))
 
@@ -227,7 +235,8 @@ def estimate_geometry(origin: LhCfPoseSample,
                       xy_plane: list[LhCfPoseSample],
                       samples: list[LhCfPoseSample]) -> dict[int, Pose]:
     """Estimate the geometry of the system based on samples recorded by a Crazyflie"""
-    matched_samples = [origin] + x_axis + xy_plane + LighthouseSampleMatcher.match(samples, min_nr_of_bs_in_match=2)
+    matched_samples = [origin] + x_axis + xy_plane + \
+        LighthouseSampleMatcher.match(samples, min_nr_of_bs_in_match=2)
     initial_guess, cleaned_matched_samples = LighthouseInitialEstimator.estimate(
         matched_samples, LhDeck4SensorPositions.positions)
 
@@ -237,7 +246,8 @@ def estimate_geometry(origin: LhCfPoseSample,
     print(f'{len(cleaned_matched_samples)} samples will be used')
     visualize(initial_guess.cf_poses, initial_guess.bs_poses.values())
 
-    solution = LighthouseGeometrySolver.solve(initial_guess, cleaned_matched_samples, LhDeck4SensorPositions.positions)
+    solution = LighthouseGeometrySolver.solve(
+        initial_guess, cleaned_matched_samples, LhDeck4SensorPositions.positions)
     if not solution.success:
         print('Solution did not converge, it might not be good!')
 
@@ -246,7 +256,8 @@ def estimate_geometry(origin: LhCfPoseSample,
     origin_pos = solution.cf_poses[0].translation
     x_axis_poses = solution.cf_poses[start_x_axis:start_x_axis + len(x_axis)]
     x_axis_pos = list(map(lambda x: x.translation, x_axis_poses))
-    xy_plane_poses = solution.cf_poses[start_xy_plane:start_xy_plane + len(xy_plane)]
+    xy_plane_poses = solution.cf_poses[start_xy_plane:
+                                       start_xy_plane + len(xy_plane)]
     xy_plane_pos = list(map(lambda x: x.translation, xy_plane_poses))
 
     print('Raw solution:')
@@ -260,7 +271,8 @@ def estimate_geometry(origin: LhCfPoseSample,
     bs_aligned_poses, transformation = LighthouseSystemAligner.align(
         origin_pos, x_axis_pos, xy_plane_pos, solution.bs_poses)
 
-    cf_aligned_poses = list(map(transformation.rotate_translate_pose, solution.cf_poses))
+    cf_aligned_poses = list(
+        map(transformation.rotate_translate_pose, solution.cf_poses))
 
     # Scale the solution
     bs_scaled_poses, cf_scaled_poses, scale = LighthouseSystemScaler.scale_fixed_point(bs_aligned_poses,
@@ -311,7 +323,8 @@ def connect_and_estimate(uri: str, file_name: str | None = None):
         print('')
         print('In the 3 following steps we will define the coordinate system.')
 
-        print('Step 2. Put the Crazyflie where you want the origin of your coordinate system.')
+        print(
+            'Step 2. Put the Crazyflie where you want the origin of your coordinate system.')
 
         origin = None
         do_repeat = True
