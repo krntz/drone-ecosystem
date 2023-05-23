@@ -1,1 +1,2 @@
-pyyaml
+-e git+https://github.com/bitcraze/crazyflie-lib-python.git@4c42407a4483e83dd08eb73f0c7017425aada564#egg=cflib
+PyYAML==5.4.1
