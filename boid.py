@@ -5,6 +5,7 @@ Based on Ben Eater's Javascript implementation of Boids: https://github.com/bene
 from drone import Drone
 from utils import DronePosition, DroneVelocity
 
+import math
 
 class Boid(Drone):
     def __init__(self,
@@ -25,7 +26,7 @@ class Boid(Drone):
         self.boid_alignment = boid_alignment
         self.boid_cohesion = boid_cohesion
 
-    def set_new_position(self, boid_positions, time_step):
+    def set_new_velocity(self, boid_positions):
         """
         Takes the positions of all boids in the swarm, converts them to distances
         to the current boid, and figures out how to change the position
@@ -34,22 +35,24 @@ class Boid(Drone):
         self.previous_position = self.position
         self.previous_velocity = self.velocity
         
+        new_velocity = self.velocity
+
+        # Rule 1
         self.fly_towards_center()
+        # Rule 2
         self.avoid_others()
+        # Rule 3
         self.match_velocity()
 
-        self.keep_within_bounds(boid_positions[self.uri])
+        new_velocity = self.keep_within_bounds(new_velocity)
+        new_velocity = self.limit_velocity(new_velocity)
 
-        x = self.position.x
-        y = self.position.y
-        z = self.position.z
+        print(new_velocity)
 
-        x += self.velocity.dx
-        y += self.velocity.dy
-        z += self.velocity.dz
+        self.set_velocity(new_velocity)
 
         # TODO: Calculate yaw based on x and y heading
-        self.position = DronePosition(x, y, z, 0)
+        #self.position = DronePosition(x, y, z, 0)
 
     def fly_towards_center(self):
         """
@@ -57,7 +60,7 @@ class Boid(Drone):
         """
         pass
 
-    def avoid_others(self, distance_to_boids):
+    def avoid_others(self):
         """
         Rule 2 in the standard boids model
         """
@@ -69,13 +72,27 @@ class Boid(Drone):
         """
         pass
 
-    def limit_speed(self):
+    def limit_velocity(self, velocity):
         """
         Should take into account the time per each step to ensure we aren't trying to move too fast
         """
-        raise NotImplementedError
 
-    def keep_within_bounds(self, position):
+        speed_limit = 0.25
+
+        vx = velocity.vx
+        vy = velocity.vy
+        vz = velocity.vz
+
+        speed = math.sqrt(vx ** 2 + vy ** 2 + vz ** 2)
+
+        if speed > speed_limit:
+            vx = (vx / speed) * speed_limit
+            vy = (vy / speed) * speed_limit
+            vz = (vz / speed) * speed_limit
+
+        return DroneVelocity(vx, vy, vz)
+
+    def keep_within_bounds(self, velocity):
         min_x = -self.flight_zone.x/2
         max_x = self.flight_zone.x/2
 
@@ -87,26 +104,26 @@ class Boid(Drone):
 
         buffer = 0.2
 
-        turning_factor = 0.05
+        turning_factor = 0.1
 
-        dx = self.velocity.dx
-        dy = self.velocity.dy
-        dz = self.velocity.dz
+        vx = velocity.vx
+        vy = velocity.vy
+        vz = velocity.vz
 
         # TODO: Scale velocity so the drone turns faster the further out-of-bounds it is
-        if position.x > (max_x - buffer):
-            dx -= turning_factor
-        elif position.x < (min_x + buffer):
-            dx += turning_factor
+        if self.position.x > (max_x - buffer):
+            vx -= turning_factor
+        elif self.position.x < (min_x + buffer):
+            vx += turning_factor
 
-        if position.y > (max_y - buffer):
-            dy -= turning_factor
-        elif position.y < (min_y + buffer):
-            dy += turning_factor
+        if self.position.y > (max_y - buffer):
+            vy -= turning_factor
+        elif self.position.y < (min_y + buffer):
+            vy += turning_factor
 
-        if position.z > ((max_z + self.flight_zone.floor_offset) - buffer):
-            dz -= turning_factor
-        elif position.z < ((min_z + self.flight_zone.floor_offset) + buffer):
-            dz += turning_factor
+        if self.position.z > ((max_z + self.flight_zone.floor_offset) - buffer):
+            vz -= turning_factor
+        elif self.position.z < ((min_z + self.flight_zone.floor_offset) + buffer):
+            vz += turning_factor
 
-        self.set_velocities(DroneVelocity(dx, dy, dz))
+        return DroneVelocity(vx, vy, vz)

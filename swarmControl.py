@@ -158,8 +158,8 @@ class SwarmControl:
         time.sleep(3)
         commander.stop()
 
-    def swarm_land(self):
-        if self.swarm_flying:
+    def swarm_land(self, emergency_land=False):
+        if self.swarm_flying or emergency_land:
             self.dprint("Landing swarm")
             self.swarm.parallel_safe(self.__land)
             self.swarm_flying = False
@@ -238,9 +238,26 @@ class SwarmControl:
 
     def move_drones(self, drones, t):
         positions = {d.get_uri(): d.get_position() for d in drones}
-        print(positions)
 
         self.swarm_move(positions, t, False)
+
+    def __set_velocity(self, scf, vx, vy, vz, yawrate):
+        commander = scf.cf.commander
+
+        commander.send_velocity_world_setpoint(vx, vy, vz, yawrate)
+
+    def set_swarm_velocities(self, velocities):
+        if not self.swarm_flying:
+            raise RuntimeError("Swarm must be flying")
+
+        args = {k: [v.vx, v.vy, v.vz, 0] for k, v in velocities.items()}
+
+        self.swarm.parallel_safe(self.__set_velocity, args)
+
+    def set_drone_velocities(self, drones):
+        velocities = {d.get_uri():d.get_velocity() for d in drones}
+        
+        self.set_swarm_velocities(velocities)
 
     def get_positions(self):
         positions = self.swarm.get_estimated_positions()
@@ -271,7 +288,7 @@ if __name__ == '__main__':
                      DEBUG=DEBUG)
 
     try:
-        time_step = 0.75
+        time_step = 1
 
         boid_separation = 0.05
         boid_alignment = 0.05
@@ -295,27 +312,36 @@ if __name__ == '__main__':
 
         s.swarm_take_off()
         time.sleep(2)
-        s.distribute_swarm(drones)
-        time.sleep(2)
+        if len(uris) > 1:
+            s.distribute_swarm(drones)
+            time.sleep(2)
+        else:
+            s.move_drones(drones, 2)
 
         flying = True
 
         while flying:
-            new_positions = []
+            drone_positions = s.get_positions()
 
+            # update the positions of the drones
             for d in drones:
-                d.set_new_position(s.get_positions())
+                d.set_position(drone_positions[d.get_uri()])
 
-            s.move_drones(drones, time_step)
+            # calculate new velocities
+            for d in drones:
+                d.set_new_velocity(drone_positions)
+
+            # set the drones moving
+            s.set_drone_velocities(drones)
 
             time.sleep(time_step)
 
         s.swarm_land()
     except KeyboardInterrupt:
         print("Exiting")
-        s.swarm_land()
+        s.swarm_land(emergency_land=True)
     except Exception as e:
-        s.swarm_land()
+        s.swarm_land(emergency_land=True)
         raise e
     finally:
         s.swarm.close_links()

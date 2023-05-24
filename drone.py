@@ -12,6 +12,7 @@ class Drone:
 
         self.position = DronePosition(0, 0, 0, 0)
 
+        # not sure that velocity is the right name for this, but it's what everyone's using
         self.velocity = DroneVelocity(0, 0, 0)
 
     def dprint(self, message):
@@ -35,10 +36,13 @@ class Drone:
         )
 
         self.velocity = DroneVelocity(
-            random.random() * 0.1 - 0.05,
-            random.random() * 0.1 - 0.05,
-            random.random() * 0.1 - 0.05
+            random.random() * 0.75 - (0.75 / 2),
+            random.random() * 0.75 - (0.75 / 2),
+            random.random() * 0.75 - (0.75 / 2)
         )
+
+        print(self.position)
+        print(self.velocity)
 
     def distance_to_swarm(self, boid_positions):
         """
@@ -63,7 +67,13 @@ class Drone:
     def get_position(self):
         return self.position
 
-    def set_velocities(self, velocity):
+    def set_position(self, position):
+        if type(position) is not DronePosition:
+            raise TypeError("Position must be of type DronePosition")
+
+        self.position = position
+
+    def set_velocity(self, velocity):
         self.velocity = velocity
 
     def get_velocity(self):
