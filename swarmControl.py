@@ -190,7 +190,6 @@ class SwarmControl:
         current_positions = self.get_positions()
         new_positions = {d.get_uri(): d.get_position() for d in drones}
 
-        # TODO: Is there a better way of doing this? (Lots of nearly identical code...)
         self.dprint("Separating drones on Z-axis")
         positions = {k: DronePosition(v.x,
                                       v.y,
@@ -200,7 +199,8 @@ class SwarmControl:
 
                      for i, (k, v) in enumerate(current_positions.items())}
 
-        self.swarm_move_absolute(positions, 2)
+        self.swarm_move(positions, 2)
+        time.sleep(2)
 
         self.dprint("Moving drones to final XY-positions")
         positions = {k: DronePosition(new_positions[uri].x,
@@ -211,41 +211,36 @@ class SwarmControl:
 
                      for i, (k, v) in enumerate(current_positions.items())}
 
-        #positions = {}
-
-        #for i, drone in enumerate(drones):
-        #    uri = drone.get_uri()
-
-        #    positions[uri] = DronePosition(new_positions[uri].x,
-        #                                   new_positions[uri].y,
-        #                                   self.flight_zone.floor_offset +
-        #                                   (i * height_fragment_size),
-        #                                   0
-        #                                   )
-
-        self.swarm_move_absolute(positions, 2)
+        self.swarm_move(positions, 2)
+        time.sleep(2)
 
         self.dprint("Moving drones to final Z-positions")
 
-        self.swarm_move_absolute(new_positions, 2)
+        self.swarm_move(new_positions, 2)
+        time.sleep(2)
 
     def __move(self, scf, position, t, relative):
         commander = scf.cf.high_level_commander
 
         commander.go_to(position.x, position.y, position.z,
                         position.yaw, t, relative)
-        time.sleep(t)
 
-    def swarm_move_absolute(self, positions, t):
+    def swarm_move(self, positions, t, relative=False):
         if not self.swarm_flying:
             raise RuntimeError("Swarm must be flying to be moved")
         # TODO: Would be awesome if this function let you leave some coordinates unchanged
 
         self.dprint("Moving swarm")
 
-        args = {k: [v, t, False] for k, v in positions.items()}
+        args = {k: [v, t, relative] for k, v in positions.items()}
 
         self.swarm.parallel_safe(self.__move, args)
+
+    def move_drones(self, drones, t):
+        positions = {d.get_uri(): d.get_position() for d in drones}
+        print(positions)
+
+        self.swarm_move(positions, t, False)
 
     def get_positions(self):
         positions = self.swarm.get_estimated_positions()
@@ -269,14 +264,14 @@ if __name__ == '__main__':
     }
 
     logging.basicConfig(level=logging.ERROR)
-    flight_zone = FlightZone(2.0, 3.0, 1.75, 0.30)
+    flight_zone = FlightZone(2.0, 3.0, 1.25, 0.30)
     s = SwarmControl(uris,
                      flight_zone,
                      'radio://0/80/2M/E7E7E7E7E0',
                      DEBUG=DEBUG)
 
     try:
-        time_step = 1
+        time_step = 0.75
 
         boid_separation = 0.05
         boid_alignment = 0.05
@@ -305,14 +300,15 @@ if __name__ == '__main__':
 
         flying = True
 
-        # while flying:
-        #    new_positions = []
+        while flying:
+            new_positions = []
 
-        #    for d in drones:
-        #        d.set_new_position(s.get_positions())
+            for d in drones:
+                d.set_new_position(s.get_positions())
 
-        #    time.sleep(time_step)
-        #    pass
+            s.move_drones(drones, time_step)
+
+            time.sleep(time_step)
 
         s.swarm_land()
     except KeyboardInterrupt:

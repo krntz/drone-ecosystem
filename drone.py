@@ -21,12 +21,12 @@ class Drone:
     def random_init(self):
         self.position = DronePosition(
             random.random() *
-            self.flight_zone.x -
-            self.flight_zone.x /
+            (self.flight_zone.x - 0.2) -
+            (self.flight_zone.x - 0.2) /
             2,
             random.random() *
-            self.flight_zone.y -
-            self.flight_zone.y /
+            (self.flight_zone.y - 0.2) -
+            (self.flight_zone.y - 0.2) /
             2,
             (random.random() *
              self.flight_zone.z) +
@@ -35,9 +35,9 @@ class Drone:
         )
 
         self.velocity = DroneVelocity(
-            random.randint(-5, 5),
-            random.randint(-5, 5),
-            random.randint(-5, 5)
+            random.random() * 0.1 - 0.05,
+            random.random() * 0.1 - 0.05,
+            random.random() * 0.1 - 0.05
         )
 
     def distance_to_swarm(self, boid_positions):
@@ -62,6 +62,9 @@ class Drone:
 
     def get_position(self):
         return self.position
+
+    def set_velocities(self, velocity):
+        self.velocity = velocity
 
     def get_velocity(self):
         return self.velocity
