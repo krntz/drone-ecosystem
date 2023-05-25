@@ -2,10 +2,11 @@
 Based on Ben Eater's Javascript implementation of Boids: https://github.com/beneater/boids/blob/master/boids.js
 """
 
+import math
+
 from drone import Drone
 from utils import DronePosition, DroneVelocity
 
-import math
 
 class Boid(Drone):
     def __init__(self,
@@ -26,7 +27,7 @@ class Boid(Drone):
         self.boid_alignment = boid_alignment
         self.boid_cohesion = boid_cohesion
 
-    def set_new_velocity(self, boid_positions):
+    def set_new_velocity(self, time_step):
         """
         Takes the positions of all boids in the swarm, converts them to distances
         to the current boid, and figures out how to change the position
@@ -34,7 +35,7 @@ class Boid(Drone):
         """
         self.previous_position = self.position
         self.previous_velocity = self.velocity
-        
+
         new_velocity = self.velocity
 
         # Rule 1
@@ -44,15 +45,26 @@ class Boid(Drone):
         # Rule 3
         self.match_velocity()
 
-        new_velocity = self.keep_within_bounds(new_velocity)
-        new_velocity = self.limit_velocity(new_velocity)
+        new_velocity = self.keep_within_bounds(new_velocity, time_step)
+        new_velocity = self.limit_velocity(new_velocity, time_step)
+
+        # new_yawrate = math.mod(
+        #    180 * math.atan2(new_velocity.vx, new_velocity.vy) / math.pi, 360)
+
+        # new_velocity = new_velocity._replace(yawrate=new_yawrate)
+
+        new_x = self.position.x + new_velocity.vx
+        new_y = self.position.y + new_velocity.vy
+        new_z = self.position.z + new_velocity.vz
+        new_yaw = self.position.yaw
+
+        new_position = DronePosition(new_x, new_y, new_z, new_yaw)
 
         print(new_velocity)
+        print(new_position)
 
+        self.set_position(new_position)
         self.set_velocity(new_velocity)
-
-        # TODO: Calculate yaw based on x and y heading
-        #self.position = DronePosition(x, y, z, 0)
 
     def fly_towards_center(self):
         """
@@ -72,7 +84,7 @@ class Boid(Drone):
         """
         pass
 
-    def limit_velocity(self, velocity):
+    def limit_velocity(self, velocity, time_step):
         """
         Should take into account the time per each step to ensure we aren't trying to move too fast
         """
@@ -90,9 +102,9 @@ class Boid(Drone):
             vy = (vy / speed) * speed_limit
             vz = (vz / speed) * speed_limit
 
-        return DroneVelocity(vx, vy, vz)
+        return DroneVelocity(vx, vy, vz, velocity.yawrate)
 
-    def keep_within_bounds(self, velocity):
+    def keep_within_bounds(self, velocity, time_step):
         min_x = -self.flight_zone.x/2
         max_x = self.flight_zone.x/2
 
@@ -111,6 +123,7 @@ class Boid(Drone):
         vz = velocity.vz
 
         # TODO: Scale velocity so the drone turns faster the further out-of-bounds it is
+
         if self.position.x > (max_x - buffer):
             vx -= turning_factor
         elif self.position.x < (min_x + buffer):
@@ -126,4 +139,4 @@ class Boid(Drone):
         elif self.position.z < ((min_z + self.flight_zone.floor_offset) + buffer):
             vz += turning_factor
 
-        return DroneVelocity(vx, vy, vz)
+        return DroneVelocity(vx, vy, vz, velocity.yawrate)

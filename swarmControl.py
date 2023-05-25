@@ -7,7 +7,7 @@ from cflib.crazyflie.swarm import CachedCfFactory, Swarm
 
 import ReadWriteLighthouseCalibration
 from boid import Boid
-from utils import DronePosition, FlightZone
+from utils import DronePosition, DroneVelocity, FlightZone
 
 
 class SwarmControl:
@@ -250,13 +250,13 @@ class SwarmControl:
         if not self.swarm_flying:
             raise RuntimeError("Swarm must be flying")
 
-        args = {k: [v.vx, v.vy, v.vz, 0] for k, v in velocities.items()}
+        args = {k: [v.vx, v.vy, v.vz, v.yawrate] for k, v in velocities.items()}
 
         self.swarm.parallel_safe(self.__set_velocity, args)
 
     def set_drone_velocities(self, drones):
-        velocities = {d.get_uri():d.get_velocity() for d in drones}
-        
+        velocities = {d.get_uri(): d.get_velocity() for d in drones}
+
         self.set_swarm_velocities(velocities)
 
     def get_positions(self):
@@ -280,7 +280,7 @@ if __name__ == '__main__':
         # 'radio://0/80/2M/E7E7E7E7E8',
     }
 
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.DEBUG)
     flight_zone = FlightZone(2.0, 3.0, 1.25, 0.30)
     s = SwarmControl(uris,
                      flight_zone,
@@ -312,6 +312,7 @@ if __name__ == '__main__':
 
         s.swarm_take_off()
         time.sleep(2)
+
         if len(uris) > 1:
             s.distribute_swarm(drones)
             time.sleep(2)
@@ -320,16 +321,22 @@ if __name__ == '__main__':
 
         flying = True
 
-        while flying:
-            drone_positions = s.get_positions()
+        drone_positions = s.get_positions()
 
+        for d in drones:
+            d.set_position(drone_positions[d.get_uri()])
+            d.set_velocity(DroneVelocity(0.2, 0.2, 0.2, 0))
+
+        while flying:
             # update the positions of the drones
-            for d in drones:
-                d.set_position(drone_positions[d.get_uri()])
+
+            #for d in drones:
+            #    d.set_position(drone_positions[d.get_uri()])
 
             # calculate new velocities
+
             for d in drones:
-                d.set_new_velocity(drone_positions)
+                d.set_new_velocity(time_step)
 
             # set the drones moving
             s.set_drone_velocities(drones)

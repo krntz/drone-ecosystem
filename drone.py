@@ -13,7 +13,7 @@ class Drone:
         self.position = DronePosition(0, 0, 0, 0)
 
         # not sure that velocity is the right name for this, but it's what everyone's using
-        self.velocity = DroneVelocity(0, 0, 0)
+        self.velocity = DroneVelocity(0, 0, 0, 0)
 
     def dprint(self, message):
         if self.DEBUG:
@@ -38,7 +38,8 @@ class Drone:
         self.velocity = DroneVelocity(
             random.random() * 0.75 - (0.75 / 2),
             random.random() * 0.75 - (0.75 / 2),
-            random.random() * 0.75 - (0.75 / 2)
+            random.random() * 0.75 - (0.75 / 2),
+            0
         )
 
         print(self.position)
