@@ -35,7 +35,7 @@ class Boid(Drone):
         """
 
         # Rule 1
-        self.fly_towards_center()
+        self.fly_towards_center(other_boids)
         # Rule 2
         self.avoid_others()
         # Rule 3
@@ -57,11 +57,39 @@ class Boid(Drone):
         print(self.position)
         print(self.velocity)
 
-    def fly_towards_center(self):
+    def fly_towards_center(self, velocity, other_boids):
         """
         Rule 1 in the standard boids model
         """
-        pass
+        centering_factor = 0.005  # adjust velocity by this %
+
+        center_x = 0
+        center_y = 0
+        center_z = 0
+        num_neighbors = 0
+
+        for b in other_boids:
+            if self.distance(b.get_position()) < self.visual_range:
+            center_x += b.get_position().x
+            center_y += b.get_position().y
+            center_z += b.get_position().z
+
+            num_neighbours += 1
+
+        if num_neighbours > 0:
+            center_x = center_x / num_neighbours
+            center_y = center_y / num_neighbours
+            center_z = center_z / num_neighbours
+
+            vx = velocity.vx
+            vy = velocoty.vy
+            vz = velocoty.vz
+
+            vx += (center_x - self.position.x) * centering_factor
+            vy += (center_y - self.position.y) * centering_factor
+            vz += (center_z - self.position.z) * centering_factor
+
+        return new_velocity
 
     def avoid_others(self):
         """
