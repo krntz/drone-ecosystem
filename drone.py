@@ -45,18 +45,20 @@ class Drone:
         print(self.position)
         print(self.velocity)
 
+    def distance(self, boid_position):
+        return math.sqrt(
+            (self.position.x - boid_position.x) ** 2 +
+            (self.position.y - boid_position.y) ** 2 +
+            (self.position.z - boid_position.z) ** 2
+        )
+
     def distance_to_swarm(self, boid_positions):
         """
-        Returns ordered list of distances to all other drones
+        Returns list of distances to all other drones
         """
 
         distances = [
-            math.sqrt(
-                (self.position.x - boid.x) ** 2 +
-                (self.position.y - boid.y) ** 2 +
-                (self.position.z - boid.z) ** 2
-            )
-
+                self.distance(boid.position)
             for boid in boids
         ]
 
