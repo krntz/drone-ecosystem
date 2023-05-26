@@ -33,10 +33,6 @@ class Boid(Drone):
         to the current boid, and figures out how to change the position
         for the next time step
         """
-        self.previous_position = self.position
-        self.previous_velocity = self.velocity
-
-        new_velocity = self.velocity
 
         # Rule 1
         self.fly_towards_center()
@@ -45,26 +41,21 @@ class Boid(Drone):
         # Rule 3
         self.match_velocity()
 
-        new_velocity = self.keep_within_bounds(new_velocity, time_step)
-        new_velocity = self.limit_velocity(new_velocity, time_step)
+        self.keep_within_bounds()
+        self.limit_velocity()
 
         # new_yawrate = math.mod(
         #    180 * math.atan2(new_velocity.vx, new_velocity.vy) / math.pi, 360)
 
         # new_velocity = new_velocity._replace(yawrate=new_yawrate)
 
-        new_x = self.position.x + new_velocity.vx
-        new_y = self.position.y + new_velocity.vy
-        new_z = self.position.z + new_velocity.vz
-        new_yaw = self.position.yaw
+        self.set_position(DronePosition(self.position.x + self.velocity.vx,
+                                        self.position.y + self.velocity.vy,
+                                        self.position.z + self.velocity.vz,
+                                        self.position.yaw))
 
-        new_position = DronePosition(new_x, new_y, new_z, new_yaw)
-
-        print(new_velocity)
-        print(new_position)
-
-        self.set_position(new_position)
-        self.set_velocity(new_velocity)
+        print(self.position)
+        print(self.velocity)
 
     def fly_towards_center(self):
         """
@@ -84,27 +75,26 @@ class Boid(Drone):
         """
         pass
 
-    def limit_velocity(self, velocity, time_step):
+    def limit_velocity(self):
         """
         Should take into account the time per each step to ensure we aren't trying to move too fast
         """
 
         speed_limit = 0.25
 
-        vx = velocity.vx
-        vy = velocity.vy
-        vz = velocity.vz
-
-        speed = math.sqrt(vx ** 2 + vy ** 2 + vz ** 2)
+        speed = math.sqrt(self.velocity.vx ** 2 +
+                          self.velocity.vy ** 2 +
+                          self.velocity.vz ** 2)
 
         if speed > speed_limit:
-            vx = (vx / speed) * speed_limit
-            vy = (vy / speed) * speed_limit
-            vz = (vz / speed) * speed_limit
+            self.set_velocity(
+                DroneVelocity((self.velocity.vx / speed) * speed_limit,
+                              (self.velocity.vy / speed) * speed_limit,
+                              (self.velocity.vz / speed) * speed_limit,
+                              self.velocity.yawrate)
+            )
 
-        return DroneVelocity(vx, vy, vz, velocity.yawrate)
-
-    def keep_within_bounds(self, velocity, time_step):
+    def keep_within_bounds(self):
         min_x = -self.flight_zone.x/2
         max_x = self.flight_zone.x/2
 
@@ -118,9 +108,9 @@ class Boid(Drone):
 
         turning_factor = 0.1
 
-        vx = velocity.vx
-        vy = velocity.vy
-        vz = velocity.vz
+        vx = self.velocity.vx
+        vy = self.velocity.vy
+        vz = self.velocity.vz
 
         # TODO: Scale velocity so the drone turns faster the further out-of-bounds it is
 
@@ -139,4 +129,4 @@ class Boid(Drone):
         elif self.position.z < ((min_z + self.flight_zone.floor_offset) + buffer):
             vz += turning_factor
 
-        return DroneVelocity(vx, vy, vz, velocity.yawrate)
+        self.set_velocity(DroneVelocity(vx, vy, vz, self.velocity.yawrate))
