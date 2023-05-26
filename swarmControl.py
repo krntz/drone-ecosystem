@@ -325,7 +325,7 @@ if __name__ == '__main__':
 
         for d in drones:
             d.set_position(drone_positions[d.get_uri()])
-            d.set_velocity(DroneVelocity(0.2, 0.2, 0.2, 0))
+            d.set_velocity(DroneVelocity(0.2, -0.2, 0.1, 0))
 
         while flying:
             # update the positions of the drones
