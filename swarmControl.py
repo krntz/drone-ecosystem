@@ -237,7 +237,7 @@ class SwarmControl:
         self.swarm.parallel_safe(self.__move, args)
 
     def move_drones(self, drones, t):
-        positions = {d.get_uri(): d.get_position() for d in drones}
+        positions = {u: d.get_position() for u, d in drones.items()}
 
         self.swarm_move(positions, t, False)
 
@@ -250,12 +250,13 @@ class SwarmControl:
         if not self.swarm_flying:
             raise RuntimeError("Swarm must be flying")
 
-        args = {k: [v.vx, v.vy, v.vz, v.yawrate] for k, v in velocities.items()}
+        args = {k: [v.vx, v.vy, v.vz, v.yawrate]
+                for k, v in velocities.items()}
 
         self.swarm.parallel_safe(self.__set_velocity, args)
 
     def set_drone_velocities(self, drones):
-        velocities = {d.get_uri(): d.get_velocity() for d in drones}
+        velocities = {u: d.get_velocity() for u, d in drones.items()}
 
         self.set_swarm_velocities(velocities)
 
@@ -294,20 +295,18 @@ if __name__ == '__main__':
         boid_alignment = 0.05
         boid_cohesion = 0.005
 
-        drones = []
+        drones = {}
 
         for uri in uris:
-            drones.append(
-                Boid(flight_zone,
-                     uri,
-                     DEBUG,
-                     boid_separation,
-                     boid_alignment,
-                     boid_cohesion
-                     )
-            )
+            drones[uri] = Boid(flight_zone,
+                               uri,
+                               DEBUG,
+                               boid_separation,
+                               boid_alignment,
+                               boid_cohesion
+                               )
 
-        for d in drones:
+        for _, d in drones.items():
             d.random_init()
 
         s.swarm_take_off()
@@ -323,20 +322,21 @@ if __name__ == '__main__':
 
         drone_positions = s.get_positions()
 
-        for d in drones:
-            d.set_position(drone_positions[d.get_uri()])
+        for i, d in drones.items():
+            d.set_position(drone_positions[i])
             d.set_velocity(DroneVelocity(0.2, -0.2, 0.1, 0))
 
         while flying:
             # update the positions of the drones
 
-            #for d in drones:
+            # for d in drones:
             #    d.set_position(drone_positions[d.get_uri()])
 
             # calculate new velocities
 
-            for d in drones:
-                d.set_new_velocity(time_step)
+            for uri, drone in drones.items():
+                other_drones = [d for u, d in drones.items() if u is not uri]
+                drone.set_new_velocity(other_drones, time_step)
 
             # set the drones moving
             s.set_drone_velocities(drones)
