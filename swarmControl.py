@@ -268,7 +268,6 @@ class SwarmControl:
 
         return {k: np.array([pos.x, pos.y, pos.z]) for uri, pos in positions.items()}
 
-
 if __name__ == '__main__':
     DEBUG = True
 
