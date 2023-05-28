@@ -37,7 +37,7 @@ class Boid(Drone):
         # Rule 1
         self.fly_towards_center(other_boids)
         # Rule 2
-        self.avoid_others()
+        self.avoid_others(other_boids)
         # Rule 3
         self.match_velocity()
 
@@ -92,11 +92,31 @@ class Boid(Drone):
                               (center_z - self.position.z) * centering_factor)
             )
 
-    def avoid_others(self):
+    def avoid_others(self, other_boids):
         """
         Rule 2 in the standard boids model
+
+        Keeps a distance between the boid and other boids to prevent mid-air collisions
         """
-        pass
+
+        min_distance = 0.2  # The distance to stay away from other boids
+        avoid_factor = 0.05  # Adjust velocity by this %
+
+        move_x = 0
+        move_y = 0
+        move_z = 0
+
+        for boid in other_boids:
+            if self.distance(boid.get_position()) < min_distance:
+                move_x += self.position.x - boid.get_position().x
+                move_y += self.position.y - boid.get_position().y
+                move_z += self.position.z - boid.get_position().z
+
+        self.set_velocity(
+            DroneVelocity(move_x * avoid_factor,
+                          move_y * avoid_factor,
+                          move_z * avoid_factor,
+                          self.velocity.yawrate))
 
     def match_velocity(self):
         """
