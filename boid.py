@@ -63,7 +63,6 @@ class Boid(Drone):
 
         Boids should fly towards the center of their swarm
         """
-        centering_factor = 0.005  # adjust velocity by this %
 
         center_x = 0
         center_y = 0
@@ -85,11 +84,12 @@ class Boid(Drone):
 
             self.set_velocity(
                 DroneVelocity(self.velocity.vx +
-                              (center_x - self.position.x) * centering_factor,
+                              (center_x - self.position.x) * self.boid_cohesion,
                               self.velocity.vy +
-                              (center_y - self.position.y) * centering_factor,
+                              (center_y - self.position.y) * self.boid_cohesion,
                               self.velocity.vz +
-                              (center_z - self.position.z) * centering_factor)
+                              (center_z - self.position.z) * self.boid_cohesion,
+                              self.velocity.yawrate)
             )
 
     def avoid_others(self, other_boids):
@@ -99,23 +99,20 @@ class Boid(Drone):
         Keeps a distance between the boid and other boids to prevent mid-air collisions
         """
 
-        min_distance = 0.2  # The distance to stay away from other boids
-        avoid_factor = 0.05  # Adjust velocity by this %
-
         move_x = 0
         move_y = 0
         move_z = 0
 
         for boid in other_boids:
-            if self.distance(boid.get_position()) < min_distance:
+            if self.distance(boid.get_position()) < self.minimum_distance:
                 move_x += self.position.x - boid.get_position().x
                 move_y += self.position.y - boid.get_position().y
                 move_z += self.position.z - boid.get_position().z
 
         self.set_velocity(
-            DroneVelocity(move_x * avoid_factor,
-                          move_y * avoid_factor,
-                          move_z * avoid_factor,
+            DroneVelocity(move_x * self.boid_separation,
+                          move_y * self.boid_separation,
+                          move_z * self.boid_separation,
                           self.velocity.yawrate))
 
     def match_velocity(self):
