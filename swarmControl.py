@@ -188,7 +188,7 @@ class SwarmControl:
         height_fragment_size = zone_height/num_drones
 
         current_positions = self.get_positions()
-        new_positions = {d.get_uri(): d.get_position() for d in drones}
+        new_positions = {k: d.get_position() for k, d in drones.items()}
 
         self.dprint("Separating drones on Z-axis")
         positions = {k: DronePosition(v.x,
@@ -271,8 +271,8 @@ if __name__ == '__main__':
 
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
-        # 'radio://0/80/2M/E7E7E7E7E1',
-        # 'radio://0/80/2M/E7E7E7E7E2',
+        #'radio://0/80/2M/E7E7E7E7E1',
+        'radio://0/80/2M/E7E7E7E7E2',
         # 'radio://0/80/2M/E7E7E7E7E3',
         # 'radio://0/80/2M/E7E7E7E7E4',
         # 'radio://0/80/2M/E7E7E7E7E5',
@@ -281,7 +281,7 @@ if __name__ == '__main__':
         # 'radio://0/80/2M/E7E7E7E7E8',
     }
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     flight_zone = FlightZone(2.0, 3.0, 1.25, 0.30)
     s = SwarmControl(uris,
                      flight_zone,
