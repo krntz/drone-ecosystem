@@ -15,6 +15,7 @@ class Boid(Drone):
                  boid_separation,
                  boid_alignment,
                  boid_cohesion,
+                 visual_range,
                  DEBUG=False):
         Drone.__init__(self, flight_zone, uri, DEBUG)
 
@@ -26,6 +27,8 @@ class Boid(Drone):
 
         self.boid_alignment = boid_alignment
         self.boid_cohesion = boid_cohesion
+
+        self.visual_range = visual_range
 
     def set_new_velocity(self, other_boids, time_step):
         """
@@ -39,7 +42,7 @@ class Boid(Drone):
         # Rule 2
         self.avoid_others(other_boids)
         # Rule 3
-        self.match_velocity()
+        self.match_velocity(other_boids)
 
         self.keep_within_bounds()
         self.limit_velocity()
@@ -69,13 +72,13 @@ class Boid(Drone):
         center_z = 0
         num_neighbours = 0
 
-        for b in other_boids:
-            # if self.distance(b.get_position()) < self.visual_range:
-            center_x += b.get_position().x
-            center_y += b.get_position().y
-            center_z += b.get_position().z
+        for boid in other_boids:
+            if self.distance(boid.get_position()) < self.visual_range:
+                center_x += boid.get_position().x
+                center_y += boid.get_position().y
+                center_z += boid.get_position().z
 
-            num_neighbours += 1
+                num_neighbours += 1
 
         if num_neighbours > 0:
             center_x /= num_neighbours
@@ -83,13 +86,15 @@ class Boid(Drone):
             center_z /= num_neighbours
 
             self.set_velocity(
-                DroneVelocity(self.velocity.vx +
-                              (center_x - self.position.x) * self.boid_cohesion,
-                              self.velocity.vy +
-                              (center_y - self.position.y) * self.boid_cohesion,
-                              self.velocity.vz +
-                              (center_z - self.position.z) * self.boid_cohesion,
-                              self.velocity.yawrate)
+                DroneVelocity(
+                    self.velocity.vx +
+                    (center_x - self.position.x) * self.boid_cohesion,
+                    self.velocity.vy +
+                    (center_y - self.position.y) * self.boid_cohesion,
+                    self.velocity.vz +
+                    (center_z - self.position.z) * self.boid_cohesion,
+                    self.velocity.yawrate
+                )
             )
 
     def avoid_others(self, other_boids):
@@ -115,11 +120,41 @@ class Boid(Drone):
                           move_z * self.boid_separation,
                           self.velocity.yawrate))
 
-    def match_velocity(self):
+    def match_velocity(self, other_boids):
         """
         Rule 3 in the standard boids model
+
+        Matches velocity (speed and direction) of the swarm
         """
-        pass
+
+        average_vx = 0
+        average_vy = 0
+        average_vz = 0
+        num_neighbours = 0
+
+        for boid in other_boids:
+            if self.distance(boid.get_position()) < self.visual_range:
+                average_vx += boid.get_velocity().vx
+                average_vy += boid.get_velocity().vy
+                average_vz += boid.get_velocity().vz
+                num_neighbours += 1
+
+        if num_neighbours > 1:
+            average_vx /= num_neighbours
+            average_vy /= num_neighbours
+            average_vz /= num_neighbours
+
+            self.set_velocity(
+                DroneVelocity(
+                    self.velocity.vx + (average_vx - boid.dx) *
+                    self.boid_alignment,
+                    self.velocity.vy + (average_vy - boid.dy) *
+                    self.boid_alignment,
+                    self.velocity.vz + (average_vz - boid.dz) *
+                    self.boid_alignment,
+                    self.velocity.yawrate
+                )
+            )
 
     def limit_velocity(self):
         """

@@ -294,6 +294,7 @@ if __name__ == '__main__':
         boid_separation = 0.05
         boid_alignment = 0.05
         boid_cohesion = 0.005
+        visual_range = 0.5
 
         drones = {}
 
@@ -303,7 +304,8 @@ if __name__ == '__main__':
                                DEBUG,
                                boid_separation,
                                boid_alignment,
-                               boid_cohesion
+                               boid_cohesion,
+                               visual_range
                                )
 
         for _, d in drones.items():
