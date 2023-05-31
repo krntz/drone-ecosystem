@@ -1,7 +1,7 @@
 import math
-import random
 
-from utils import DronePosition, DroneVelocity
+import numpy as np
+from numpy.random import default_rng
 
 
 class Drone:
@@ -10,59 +10,39 @@ class Drone:
         self.uri = uri
         self.DEBUG = DEBUG
 
-        self.position = DronePosition(0, 0, 0, 0)
+        self.position = np.zeros(3)
+        self.yaw = 0
 
-        # not sure that velocity is the right name for this, but it's what everyone's using
-        self.velocity = DroneVelocity(0, 0, 0, 0)
+        self.velocity = np.zeros(3)
+        self.yaw_rate = 0
 
     def dprint(self, message):
         if self.DEBUG:
             print(message)
 
     def random_init(self):
-        self.position = DronePosition(
-            random.random() *
-            (self.flight_zone.x - 0.2) -
-            (self.flight_zone.x - 0.2) /
-            2,
-            random.random() *
-            (self.flight_zone.y - 0.2) -
-            (self.flight_zone.y - 0.2) /
-            2,
-            (random.random() *
-             self.flight_zone.z) +
-            self.flight_zone.floor_offset,
-            0
-        )
+        rng = default_rng()
 
-        self.velocity = DroneVelocity(
-            random.random() * 0.75 - (0.75 / 2),
-            random.random() * 0.75 - (0.75 / 2),
-            random.random() * 0.75 - (0.75 / 2),
-            0
-        )
+        self.position = rng.random(3) * np.array([
+            (self.flight_zone.x - 0.2) - (self.flight_zone.x - 0.2) / 2,
+            (self.flight_zone.y - 0.2) - (self.flight_zone.y - 0.2) / 2,
+            self.flight_zone.z + self.flight_zone.floor_offset
+        ])
 
-        print(self.position)
-        print(self.velocity)
+        self.yaw = 0
 
-    def distance(self, boid_position):
-        return math.sqrt(
-            (self.position.x - boid_position.x) ** 2 +
-            (self.position.y - boid_position.y) ** 2 +
-            (self.position.z - boid_position.z) ** 2
-        )
+        self.velocity = rng.random(3) * (0.75 - (0.75 / 2))
+        self.yaw_rate = 0
+
+    def distance_to_boid(self, boid_position):
+        return math.sqrt(np.sum((self.position - boid_position) ** 2))
 
     def distance_to_swarm(self, boid_positions):
         """
         Returns list of distances to all other drones
         """
 
-        distances = [
-                self.distance(boid.position)
-            for boid in boids
-        ]
-
-        return distances
+        return [self.distance_to_boid(boid.position) for boid in boids]
 
     def get_uri(self):
         return self.uri
@@ -71,9 +51,6 @@ class Drone:
         return self.position
 
     def set_position(self, position):
-        if type(position) is not DronePosition:
-            raise TypeError("Position must be of type DronePosition")
-
         self.position = position
 
     def set_velocity(self, velocity):

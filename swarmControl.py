@@ -3,11 +3,12 @@ import time
 from threading import Event
 
 import cflib.crtp
+import numpy as np
 from cflib.crazyflie.swarm import CachedCfFactory, Swarm
 
 import ReadWriteLighthouseCalibration
 from boid import Boid
-from utils import DronePosition, DroneVelocity, FlightZone
+from utils import FlightZone
 
 
 class SwarmControl:
@@ -78,13 +79,14 @@ class SwarmControl:
 
         # Assume the swarm is flying when garbage collecting to prevent
         # flying without control software
-        try:
+
+        if hasattr(self, 'swarm'):
             self.swarm.parallel_safe(self.__land)
             time.sleep(2)
-        except Exception as e:
-            print(e)
+
+            self.swarm.close_links()
+
         self.swarm_flying = False
-        self.swarm.close_links()
 
     def dprint(self, message):
         """
@@ -188,58 +190,58 @@ class SwarmControl:
         height_fragment_size = zone_height/num_drones
 
         current_positions = self.get_positions()
-        new_positions = {k: d.get_position() for k, d in drones.items()}
+        new_positions = {uri: drone.get_position()
+                         for uri, drone in drones.items()}
 
         self.dprint("Separating drones on Z-axis")
-        positions = {k: DronePosition(v.x,
-                                      v.y,
-                                      self.flight_zone.floor_offset +
-                                      (i * height_fragment_size),
-                                      0)
+        positions = {uri: np.array([pos[0],
+                                    pos[1],
+                                    self.flight_zone.floor_offset +
+                                    (i * height_fragment_size)])
 
-                     for i, (k, v) in enumerate(current_positions.items())}
+                     for i, (uri, pos) in enumerate(current_positions.items())}
 
-        self.swarm_move(positions, 2)
+        self.swarm_move(positions, 0, 2)
         time.sleep(2)
 
         self.dprint("Moving drones to final XY-positions")
-        positions = {k: DronePosition(new_positions[uri].x,
-                                      new_positions[uri].y,
-                                      self.flight_zone.floor_offset +
-                                      (i * height_fragment_size),
-                                      0)
+        positions = {uri: np.array([pos[0],
+                                    pos[1],
+                                    self.flight_zone.floor_offset +
+                                    (i * height_fragment_size)])
 
-                     for i, (k, v) in enumerate(current_positions.items())}
+                     for i, (uri, pos) in enumerate(current_positions.items())}
 
-        self.swarm_move(positions, 2)
+        self.swarm_move(positions, 0, 2)
         time.sleep(2)
 
         self.dprint("Moving drones to final Z-positions")
 
-        self.swarm_move(new_positions, 2)
+        self.swarm_move(new_positions, 0, 2)
         time.sleep(2)
 
-    def __move(self, scf, position, t, relative):
+    def __move(self, scf, x, y, z, yaw, t, relative):
         commander = scf.cf.high_level_commander
 
-        commander.go_to(position.x, position.y, position.z,
-                        position.yaw, t, relative)
+        commander.go_to(x, y, z, yaw, t, relative)
 
-    def swarm_move(self, positions, t, relative=False):
+    def swarm_move(self, positions, yaw, t, relative=False):
         if not self.swarm_flying:
             raise RuntimeError("Swarm must be flying to be moved")
         # TODO: Would be awesome if this function let you leave some coordinates unchanged
 
         self.dprint("Moving swarm")
 
-        args = {k: [v, t, relative] for k, v in positions.items()}
+        args = {uri: [pos[0], pos[1], pos[2], yaw, t, relative]
+                for uri, pos in positions.items()}
 
         self.swarm.parallel_safe(self.__move, args)
 
     def move_drones(self, drones, t):
-        positions = {u: d.get_position() for u, d in drones.items()}
+        positions = {uri: drone.get_position()
+                     for uri, drone in drones.items()}
 
-        self.swarm_move(positions, t, False)
+        self.swarm_move(positions, 0, t, False)
 
     def __set_velocity(self, scf, vx, vy, vz, yawrate):
         commander = scf.cf.commander
@@ -250,20 +252,21 @@ class SwarmControl:
         if not self.swarm_flying:
             raise RuntimeError("Swarm must be flying")
 
-        args = {k: [v.vx, v.vy, v.vz, v.yawrate]
-                for k, v in velocities.items()}
+        args = {uri: [vel[0], vel[1], vel[2], 0]
+                for uri, vel in velocities.items()}
 
         self.swarm.parallel_safe(self.__set_velocity, args)
 
     def set_drone_velocities(self, drones):
-        velocities = {u: d.get_velocity() for u, d in drones.items()}
+        velocities = {uri: drone.get_velocity()
+                      for uri, drone in drones.items()}
 
         self.set_swarm_velocities(velocities)
 
     def get_positions(self):
         positions = self.swarm.get_estimated_positions()
 
-        return {k: DronePosition(v.x, v.y, v.z, 0) for k, v in positions.items()}
+        return {k: np.array([pos.x, pos.y, pos.z]) for uri, pos in positions.items()}
 
 
 if __name__ == '__main__':
@@ -271,7 +274,7 @@ if __name__ == '__main__':
 
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
-        #'radio://0/80/2M/E7E7E7E7E1',
+        # 'radio://0/80/2M/E7E7E7E7E1',
         'radio://0/80/2M/E7E7E7E7E2',
         # 'radio://0/80/2M/E7E7E7E7E3',
         # 'radio://0/80/2M/E7E7E7E7E4',
@@ -326,7 +329,7 @@ if __name__ == '__main__':
 
         for i, d in drones.items():
             d.set_position(drone_positions[i])
-            d.set_velocity(DroneVelocity(0.2, -0.2, 0.1, 0))
+            d.set_velocity(np.array([0.2, -0.2, 0.1]))
 
         while flying:
             # update the positions of the drones
@@ -353,5 +356,6 @@ if __name__ == '__main__':
         s.swarm_land(emergency_land=True)
         raise e
     finally:
-        s.swarm.close_links()
+        if hasattr(s, 'swarm'):
+            s.swarm.close_links()
         del s

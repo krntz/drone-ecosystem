@@ -4,8 +4,9 @@ Based on Ben Eater's Javascript implementation of Boids: https://github.com/bene
 
 import math
 
+import numpy as np
+
 from drone import Drone
-from utils import DronePosition, DroneVelocity
 
 
 class Boid(Drone):
@@ -18,9 +19,6 @@ class Boid(Drone):
                  visual_range,
                  DEBUG=False):
         Drone.__init__(self, flight_zone, uri, DEBUG)
-
-        self.previous_location = None
-        self.previous_velocity = None
 
         self.boid_separation = boid_separation
         self.minimum_distance = 0.2
@@ -52,10 +50,8 @@ class Boid(Drone):
 
         # new_velocity = new_velocity._replace(yawrate=new_yawrate)
 
-        self.set_position(DronePosition(self.position.x + self.velocity.vx,
-                                        self.position.y + self.velocity.vy,
-                                        self.position.z + self.velocity.vz,
-                                        self.position.yaw))
+        self.position += self.velocity
+        self.yaw = self.yaw
 
         print(self.position)
         print(self.velocity)
@@ -67,35 +63,21 @@ class Boid(Drone):
         Boids should fly towards the center of their swarm
         """
 
-        center_x = 0
-        center_y = 0
-        center_z = 0
+        center = np.zeros(3)
         num_neighbours = 0
 
         for boid in other_boids:
-            if self.distance(boid.get_position()) < self.visual_range:
-                center_x += boid.get_position().x
-                center_y += boid.get_position().y
-                center_z += boid.get_position().z
+            boid_pos = boid.get_position()
 
+            if self.distance_to_boid(boid_pos) < self.visual_range:
+                center += boid_pos
                 num_neighbours += 1
 
         if num_neighbours > 0:
-            center_x /= num_neighbours
-            center_y /= num_neighbours
-            center_z /= num_neighbours
+            center /= num_neighbours
 
-            self.set_velocity(
-                DroneVelocity(
-                    self.velocity.vx +
-                    (center_x - self.position.x) * self.boid_cohesion,
-                    self.velocity.vy +
-                    (center_y - self.position.y) * self.boid_cohesion,
-                    self.velocity.vz +
-                    (center_z - self.position.z) * self.boid_cohesion,
-                    self.velocity.yawrate
-                )
-            )
+            self.velocity += (center - self.position) * self.boid_cohesion
+            self.yaw_rate = self.yaw_rate
 
     def avoid_others(self, other_boids):
         """
@@ -104,21 +86,16 @@ class Boid(Drone):
         Keeps a distance between the boid and other boids to prevent mid-air collisions
         """
 
-        move_x = 0
-        move_y = 0
-        move_z = 0
+        move = np.zeros(3)
 
         for boid in other_boids:
-            if self.distance(boid.get_position()) < self.minimum_distance:
-                move_x += self.position.x - boid.get_position().x
-                move_y += self.position.y - boid.get_position().y
-                move_z += self.position.z - boid.get_position().z
+            boid_pos = boid.get_position()
 
-        self.set_velocity(
-            DroneVelocity(move_x * self.boid_separation,
-                          move_y * self.boid_separation,
-                          move_z * self.boid_separation,
-                          self.velocity.yawrate))
+            if self.distance_to_boid(boid_pos) < self.minimum_distance:
+                move += self.postition - boid_pos
+
+        self.velocity += move_x * self.boid_separation
+        self.yaw_rate = self.yaw_rate
 
     def match_velocity(self, other_boids):
         """
@@ -127,34 +104,21 @@ class Boid(Drone):
         Matches velocity (speed and direction) of the swarm
         """
 
-        average_vx = 0
-        average_vy = 0
-        average_vz = 0
+        average_velocity = np.zeros(3)
         num_neighbours = 0
 
         for boid in other_boids:
-            if self.distance(boid.get_position()) < self.visual_range:
-                average_vx += boid.get_velocity().vx
-                average_vy += boid.get_velocity().vy
-                average_vz += boid.get_velocity().vz
+            boid_pos = boid.get_position()
+
+            if self.distance_to_boid(boid_pos) < self.visual_range:
+                average_velocity += boid.get_velocity()
+
                 num_neighbours += 1
 
         if num_neighbours > 1:
-            average_vx /= num_neighbours
-            average_vy /= num_neighbours
-            average_vz /= num_neighbours
-
-            self.set_velocity(
-                DroneVelocity(
-                    self.velocity.vx + (average_vx - boid.dx) *
-                    self.boid_alignment,
-                    self.velocity.vy + (average_vy - boid.dy) *
-                    self.boid_alignment,
-                    self.velocity.vz + (average_vz - boid.dz) *
-                    self.boid_alignment,
-                    self.velocity.yawrate
-                )
-            )
+            average_velocity /= num_neighbours
+            self.velocity += (average_velocity -
+                              boid.get_velocity()) * self.boid_alignment
 
     def limit_velocity(self):
         """
@@ -163,17 +127,11 @@ class Boid(Drone):
 
         speed_limit = 0.25
 
-        speed = math.sqrt(self.velocity.vx ** 2 +
-                          self.velocity.vy ** 2 +
-                          self.velocity.vz ** 2)
+        speed = math.sqrt(np.sum(self.velocity ** 2))
 
         if speed > speed_limit:
-            self.set_velocity(
-                DroneVelocity((self.velocity.vx / speed) * speed_limit,
-                              (self.velocity.vy / speed) * speed_limit,
-                              (self.velocity.vz / speed) * speed_limit,
-                              self.velocity.yawrate)
-            )
+            self.velocity = (self.velocity / speed) * speed_limit
+            self.yaw_rate = self.yaw_rate
 
     def keep_within_bounds(self):
         min_x = -self.flight_zone.x/2
@@ -189,25 +147,19 @@ class Boid(Drone):
 
         turning_factor = 0.1
 
-        vx = self.velocity.vx
-        vy = self.velocity.vy
-        vz = self.velocity.vz
-
         # TODO: Scale velocity so the drone turns faster the further out-of-bounds it is
 
-        if self.position.x > (max_x - buffer):
-            vx -= turning_factor
-        elif self.position.x < (min_x + buffer):
-            vx += turning_factor
+        if self.position[0] > (max_x - buffer):
+            self.velocity[0] -= turning_factor
+        elif self.position[0] < (min_x + buffer):
+            self.velocity[0] += turning_factor
 
-        if self.position.y > (max_y - buffer):
-            vy -= turning_factor
-        elif self.position.y < (min_y + buffer):
-            vy += turning_factor
+        if self.position[1] > (max_y - buffer):
+            self.velocity[1] -= turning_factor
+        elif self.position[1] < (min_y + buffer):
+            self.velocity[1] += turning_factor
 
-        if self.position.z > ((max_z + self.flight_zone.floor_offset) - buffer):
-            vz -= turning_factor
-        elif self.position.z < ((min_z + self.flight_zone.floor_offset) + buffer):
-            vz += turning_factor
-
-        self.set_velocity(DroneVelocity(vx, vy, vz, self.velocity.yawrate))
+        if self.position[2] > ((max_z + self.flight_zone.floor_offset) - buffer):
+            self.velocity[2] -= turning_factor
+        elif self.position[2] < ((min_z + self.flight_zone.floor_offset) + buffer):
+            self.velocity[2] += turning_factor
