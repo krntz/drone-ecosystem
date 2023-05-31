@@ -237,6 +237,7 @@ class SwarmControl:
 
         self.swarm.parallel_safe(self.__move, args)
 
+<<<<<<< HEAD
     def move_drones(self, drones, t):
         positions = {uri: drone.get_position()
                      for uri, drone in drones.items()}
