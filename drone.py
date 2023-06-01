@@ -5,20 +5,15 @@ from numpy.random import default_rng
 
 
 class Drone:
-    def __init__(self, flight_zone, uri, DEBUG=False) -> None:
+    def __init__(self, flight_zone, uid):
         self.flight_zone = flight_zone
-        self.uri = uri
-        self.DEBUG = DEBUG
+        self._uid = uid
 
-        self.position = np.zeros(3)
+        self._position = np.zeros(3)
         self.yaw = 0
 
-        self.velocity = np.zeros(3)
+        self._velocity = np.zeros(3)
         self.yaw_rate = 0
-
-    def dprint(self, message):
-        if self.DEBUG:
-            print(message)
 
     def random_init(self):
         rng = default_rng()
@@ -44,20 +39,25 @@ class Drone:
 
         return [self.distance_to_boid(boid.position) for boid in boids]
 
-    def get_uri(self):
-        return self.uri
+    @property
+    def uid(self):
+        return self._uid
 
-    def get_position(self):
-        return self.position
+    @property
+    def position(self):
+        return self._position
 
-    def set_position(self, position):
-        self.position = position
+    @position.setter
+    def position(self, position):
+        self._position = position
 
-    def set_velocity(self, velocity):
-        self.velocity = velocity
+    @property
+    def velocity(self):
+        return self._velocity
 
-    def get_velocity(self):
-        return self.velocity
+    @velocity.setter
+    def velocity(self, velocity):
+        self._velocity = velocity
 
     def set_new_position(self):
         raise NotImplementedError

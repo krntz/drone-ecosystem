@@ -8,17 +8,20 @@ import numpy as np
 
 from drone import Drone
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class Boid(Drone):
     def __init__(self,
                  flight_zone,
-                 uri,
+                 uid,
                  boid_separation,
                  boid_alignment,
                  boid_cohesion,
-                 visual_range,
-                 DEBUG=False):
-        Drone.__init__(self, flight_zone, uri, DEBUG)
+                 visual_range):
+        super().__init__(flight_zone, uid)
 
         self.boid_separation = boid_separation
         self.minimum_distance = 0.2
@@ -35,6 +38,7 @@ class Boid(Drone):
         for the next time step
         """
 
+        logger.debug("Running rules for boid with id " + self.uid)
         # Rule 1
         self.fly_towards_center(other_boids)
         # Rule 2
@@ -53,8 +57,11 @@ class Boid(Drone):
         self.position += self.velocity
         self.yaw = self.yaw
 
-        print(self.position)
-        print(self.velocity)
+        logger.debug("New velocity for boid with id " + self.uid)
+        logger.debug(self.velocity)
+
+        logger.debug("New position for boid with id " + self.uid)
+        logger.debug(self.position)
 
     def fly_towards_center(self, other_boids):
         """
@@ -67,7 +74,7 @@ class Boid(Drone):
         num_neighbours = 0
 
         for boid in other_boids:
-            boid_pos = boid.get_position()
+            boid_pos = boid.position
 
             if self.distance_to_boid(boid_pos) < self.visual_range:
                 center += boid_pos
@@ -89,12 +96,12 @@ class Boid(Drone):
         move = np.zeros(3)
 
         for boid in other_boids:
-            boid_pos = boid.get_position()
+            boid_pos = boid.position
 
             if self.distance_to_boid(boid_pos) < self.minimum_distance:
                 move += self.postition - boid_pos
 
-        self.velocity += move_x * self.boid_separation
+        self.velocity += move * self.boid_separation
         self.yaw_rate = self.yaw_rate
 
     def match_velocity(self, other_boids):
@@ -108,17 +115,17 @@ class Boid(Drone):
         num_neighbours = 0
 
         for boid in other_boids:
-            boid_pos = boid.get_position()
+            boid_pos = boid.position
 
             if self.distance_to_boid(boid_pos) < self.visual_range:
-                average_velocity += boid.get_velocity()
+                average_velocity += boid.velocity
 
                 num_neighbours += 1
 
         if num_neighbours > 1:
             average_velocity /= num_neighbours
             self.velocity += (average_velocity -
-                              boid.get_velocity()) * self.boid_alignment
+                              boid.velocity) * self.boid_alignment
 
     def limit_velocity(self):
         """
