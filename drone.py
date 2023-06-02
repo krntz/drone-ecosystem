@@ -1,73 +1,63 @@
 import math
-import random
 
-from utils import DronePosition, DroneVelocity
+import numpy as np
+from numpy.random import default_rng
 
 
 class Drone:
-    def __init__(self, flight_zone, uri, DEBUG=False) -> None:
+    def __init__(self, flight_zone, uid):
         self.flight_zone = flight_zone
-        self.uri = uri
-        self.DEBUG = DEBUG
+        self._uid = uid
 
-        self.position = DronePosition(0, 0, 0, 0)
+        self._position = np.zeros(3)
+        self.yaw = 0
 
-        self.velocity = DroneVelocity(0, 0, 0)
-
-    def dprint(self, message):
-        if self.DEBUG:
-            print(message)
+        self._velocity = np.zeros(3)
+        self.yaw_rate = 0
 
     def random_init(self):
-        self.position = DronePosition(
-            random.random() *
-            (self.flight_zone.x - 0.2) -
-            (self.flight_zone.x - 0.2) /
-            2,
-            random.random() *
-            (self.flight_zone.y - 0.2) -
-            (self.flight_zone.y - 0.2) /
-            2,
-            (random.random() *
-             self.flight_zone.z) +
-            self.flight_zone.floor_offset,
-            0
-        )
+        rng = default_rng()
 
-        self.velocity = DroneVelocity(
-            random.random() * 0.1 - 0.05,
-            random.random() * 0.1 - 0.05,
-            random.random() * 0.1 - 0.05
-        )
+        self.position = rng.random(3) * np.array([
+            (self.flight_zone.x - 0.2) - (self.flight_zone.x - 0.2) / 2,
+            (self.flight_zone.y - 0.2) - (self.flight_zone.y - 0.2) / 2,
+            self.flight_zone.z + self.flight_zone.floor_offset
+        ])
+
+        self.yaw = 0
+
+        self.velocity = rng.random(3) * (0.75 - (0.75 / 2))
+        self.yaw_rate = 0
+
+    def distance_to_boid(self, boid_position):
+        return math.sqrt(np.sum((self.position - boid_position) ** 2))
 
     def distance_to_swarm(self, boid_positions):
         """
-        Returns ordered list of distances to all other drones
+        Returns list of distances to all other drones
         """
 
-        distances = [
-            math.sqrt(
-                (self.position.x - boid.x) ** 2 +
-                (self.position.y - boid.y) ** 2 +
-                (self.position.z - boid.z) ** 2
-            )
+        return [self.distance_to_boid(boid.position) for boid in boids]
 
-            for boid in boids
-        ]
+    @property
+    def uid(self):
+        return self._uid
 
-        return distances
+    @property
+    def position(self):
+        return self._position
 
-    def get_uri(self):
-        return self.uri
+    @position.setter
+    def position(self, position):
+        self._position = position
 
-    def get_position(self):
-        return self.position
+    @property
+    def velocity(self):
+        return self._velocity
 
-    def set_velocities(self, velocity):
-        self.velocity = velocity
-
-    def get_velocity(self):
-        return self.velocity
+    @velocity.setter
+    def velocity(self, velocity):
+        self._velocity = velocity
 
     def set_new_position(self):
         raise NotImplementedError
