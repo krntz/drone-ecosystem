@@ -47,8 +47,8 @@ Home-base for `Swarm`s and `Mate`s.
 **Attributes:**
 - `collision_radius`: `float` - describes the sphere that contains the `Mushroom`, used to avoid collision
 - `activation_radius`: `float` - describes how close the `Boid`s have to get to activate the `Mushroom`
-- `residents`: list of `string`s - list of the `uid`s of the `Boid`s that call this `Mushroom` home
-- `occupants`: list of `string`s - list of the `uid`s of the `Boid`s that are currently in the `Mushroom`
+- `residents`: list of `Boids` - list of the `Boids`s that call this `Mushroom` home
+- `occupants`: list of `Boids` - list of the `Boids`s that are currently in the `Mushroom`
 - `current_food`: `int` - The current amount of food in the `Mushroom`
 - `food_threshold`: `int` - The amount of food required for the `Mushroom` to start activating the `Floor` around it
 - `floor`: `Floor` - The section of `Floor` around the `Mushroom`
