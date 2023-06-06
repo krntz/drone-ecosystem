@@ -14,6 +14,11 @@ Can handle either physical (drones) or virtual (3d or text-based) representation
 
 class BoidManager:
     def __init__(self, controller, flight_zone, boids):
+        """
+        :param controller: controller interface object
+        :param flight_zone: dimensions of the flight zone
+        :param boids: List of boid-objects
+        """
         self.controller = controller
 
         # if the controller does not provide the attribute PHYSICAL,
@@ -32,10 +37,12 @@ class BoidManager:
         for boid in self.boids:
             boid.random_init()
 
-    def get_velocities(self):
+    @property
+    def velocities(self):
         return {boid.uid: boid.velocity for boid in self.boids}
 
-    def get_positions(self):
+    @property
+    def positions(self):
         return {boid.uid: boid.position for boid in self.boids}
 
     def update_positions(self, positions, yaw, relative=False, time_to_move=None):
@@ -101,9 +108,9 @@ class BoidManager:
 
         logger.info("Moving drones to final Z-positions")
         logger.debug("Using the following posistions:")
-        logger.debug(self.get_positions())
+        logger.debug(self.positions)
 
-        self.update_positions(self.get_positions(), 0, time_to_move=2)
+        self.update_positions(self.positions, 0, time_to_move=2)
         time.sleep(1)
 
     def boid_loop(self, time_step=None):
@@ -113,12 +120,17 @@ class BoidManager:
 
         if self.controller.PHYSICAL:
             logger.info("Using physical system")
-            self.distribute_swarm()
+            #self.distribute_swarm()
         else:
             logger.info("Using virtual system")
-            self.update_positions(self.get_positions(), 0)
+            #self.update_positions(self.positions, 0)
 
         self.flying = True
+
+        current_positions = self.controller.get_swarm_positions()
+
+        for drone in self.boids:
+            drone.position = current_positions[drone.uid]
 
         while self.flying:
             for boid in self.boids:
@@ -130,7 +142,7 @@ class BoidManager:
                 boid.set_new_velocity(other_boids, time_step)
 
             # set the boids moving
-            self.update_velocities(self.get_velocities(), 0)
+            self.update_velocities(self.velocities, 0)
 
             if time_step is not None:
                 time.sleep(time_step)

@@ -23,8 +23,8 @@ class Boid(Drone):
                  visual_range):
         super().__init__(flight_zone, uid)
 
-        self.boid_separation = boid_separation
-        self.minimum_distance = 0.2
+        self.boid_separation = boid_separation # Percentage
+        self.minimum_distance = 0.3
 
         self.boid_alignment = boid_alignment
         self.boid_cohesion = boid_cohesion
@@ -48,11 +48,6 @@ class Boid(Drone):
 
         self.keep_within_bounds()
         self.limit_velocity()
-
-        # new_yawrate = math.mod(
-        #    180 * math.atan2(new_velocity.vx, new_velocity.vy) / math.pi, 360)
-
-        # new_velocity = new_velocity._replace(yawrate=new_yawrate)
 
         self.position += self.velocity
         self.yaw = self.yaw
@@ -96,10 +91,8 @@ class Boid(Drone):
         move = np.zeros(3)
 
         for boid in other_boids:
-            boid_pos = boid.position
-
-            if self.distance_to_boid(boid_pos) < self.minimum_distance:
-                move += self.postition - boid_pos
+            if self.distance_to_boid(boid.position) < self.minimum_distance:
+                move += self.position - boid.position
 
         self.velocity += move * self.boid_separation
         self.yaw_rate = self.yaw_rate

@@ -10,23 +10,23 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
-        # 'radio://0/80/2M/E7E7E7E7E1',
-        # 'radio://0/80/2M/E7E7E7E7E2',
-        # 'radio://0/80/2M/E7E7E7E7E3',
-        # 'radio://0/80/2M/E7E7E7E7E4',
-        # 'radio://0/80/2M/E7E7E7E7E5',
-        # 'radio://0/80/2M/E7E7E7E7E6',
-        # 'radio://0/80/2M/E7E7E7E7E7',
-        # 'radio://0/80/2M/E7E7E7E7E8',
+        #'radio://0/80/2M/E7E7E7E7E1',
+        'radio://0/80/2M/E7E7E7E7E2',
+        'radio://0/80/2M/E7E7E7E7E3',
+        'radio://0/80/2M/E7E7E7E7E4',
+        'radio://0/80/2M/E7E7E7E7E5',
+        'radio://0/80/2M/E7E7E7E7E6',
+        #'radio://0/80/2M/E7E7E7E7E7',
+        'radio://0/80/2M/E7E7E7E7E8',
     }
 
     logging.basicConfig(level=logging.DEBUG)
     flight_zone = FlightZone(2.0, 3.0, 1.25, 0.30)
 
-    boid_separation = 0.05
-    boid_alignment = 0.05
-    boid_cohesion = 0.005
-    visual_range = 0.5
+    boid_separation = 1
+    boid_alignment = 0.1
+    boid_cohesion = 0.1
+    visual_range = 1
 
     drones = [
         Boid(flight_zone,
