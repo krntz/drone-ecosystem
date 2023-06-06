@@ -73,12 +73,6 @@ class BoidManager:
         height_fragment_size = self.flight_zone.z/num_boids
 
         logger.info("Separating drones on Z-axis")
-        # positions = {boid_id: np.array([pos[0],
-        #                                pos[1],
-        #                                floor_offset + (i * height_fragment_size)])
-
-        #             for i, (boid_id, pos) in enumerate(current_positions.items())}
-
         positions = {boid.uid: np.array([0, 0, i * height_fragment_size])
                      for i, boid in enumerate(self.boids)}
         logger.debug("Using the following posistions:")
@@ -88,12 +82,6 @@ class BoidManager:
         time.sleep(1)
 
         logger.info("Moving drones to final XY-positions")
-        # positions = {boid_id: np.array([pos[0],
-        #                                pos[1],
-        #                               floor_offset + (i * height_fragment_size)])
-
-        #            for i, (boid_id, pos) in enumerate(new_positions.items())}
-
         # TODO: This cannot be a relative move
         positions = {boid.uid: np.array([boid.position[0],
                                          boid.position[1],
@@ -127,12 +115,12 @@ class BoidManager:
 
         self.flying = True
 
-        current_positions = self.controller.get_swarm_positions()
-
-        for drone in self.boids:
-            drone.position = current_positions[drone.uid]
-
         while self.flying:
+            current_positions = self.controller.swarm_positions
+
+            for boid in self.boids:
+                boid.position = current_positions[boid.uid]
+
             for boid in self.boids:
                 # TODO: Make parallel
 

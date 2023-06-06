@@ -1,14 +1,14 @@
+import logging
 import time
 from threading import Event
 
 import cflib.crtp
 import numpy as np
+from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.swarm import CachedCfFactory, Swarm
 
 import ReadWriteLighthouseCalibration
 from utils import FlightZone
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +28,15 @@ class CrazyflieSwarmControl:
                  config):
         self.uris = uris            # the resource identifiers of all drones
         self.swarm_flying = False
-        self._PHYSICAL = True       # REQUIRED! Denotes for the boid manager whether the system is using a physical representation or not
+        # REQUIRED! Denotes for the boid manager whether the system is using a physical representation or not
+        self._PHYSICAL = True
 
         if type(flight_zone) is not FlightZone:
             raise TypeError("flight_zone type should be namedtuple FlightZone")
 
         self.flight_zone = flight_zone
+
+        self.swarm_positions = {uri: np.zeros(3) for uri in self.uris}
 
         cflib.crtp.init_drivers()
 
@@ -81,6 +84,8 @@ class CrazyflieSwarmControl:
 
         self.swarm_take_off()
 
+        self.swarm.parallel_safe(self.__start_position_logging)
+
     def __del__(self):
         logger.info("Deleting Crazyflie swarm")
 
@@ -107,14 +112,16 @@ class CrazyflieSwarmControl:
         3. Resets estimators and waits for good lock on positions
         """
         logger.info("Running pre-flight safety checks")
-        logger.info("Running light check. Ensure red light on all connected drones.")
+        logger.info(
+            "Running light check. Ensure red light on all connected drones.")
         self.swarm.parallel_safe(self.__light_check)
 
         # TODO: This aint working for some reason...
         # logger.info("Checking for Lighthouse deck")
         # self.swarm.parallel_safe(self.__deck_check)
 
-        logger.info("Resetting estimators. Will block until good lock on position.")
+        logger.info(
+            "Resetting estimators. Will block until good lock on position.")
         self.swarm.reset_estimators()
 
     def __light_check(self, scf):
@@ -145,7 +152,7 @@ class CrazyflieSwarmControl:
         commander = scf.cf.high_level_commander
 
         commander.takeoff(self.flight_zone.floor_offset, 2.0)
-        time.sleep(3)
+        time.sleep(2)
 
     def swarm_take_off(self):
         logger.info("Swarm is taking off")
@@ -219,3 +226,17 @@ class CrazyflieSwarmControl:
         positions = self.swarm.get_estimated_positions()
 
         return {uri: np.array([pos.x, pos.y, pos.z]) for uri, pos in positions.items()}
+
+    def __position_callback(self, timestamp, data, log_conf):
+        self.swarm_positions[log_conf.cf.link_uri] = np.array(
+            [data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
+
+    def __start_position_logging(self, scf):
+        log_conf = LogConfig(name='Position', period_in_ms=10)
+        log_conf.add_variable('kalman.stateX', 'float')
+        log_conf.add_variable('kalman.stateY', 'float')
+        log_conf.add_variable('kalman.stateZ', 'float')
+
+        scf.cf.log.add_config(log_conf)
+        log_conf.data_received_cb.add_callback(self.__position_callback)
+        log_conf.start()

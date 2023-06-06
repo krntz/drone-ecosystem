@@ -102,9 +102,6 @@ class Boid:
         keep_within_bounds(self)
         limit_velocity(self)
 
-        self.position += self.velocity
-        self.yaw = self.yaw
-
         logger.debug("New velocity for boid with id " + self.uid)
         logger.debug(self.velocity)
 
