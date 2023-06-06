@@ -1,6 +1,6 @@
 import logging
 
-from boid import Boid
+from boids.boid import Boid
 from boidManager import BoidManager
 from crazyflieSwarmControl import CrazyflieSwarmControl
 from utils import FlightZone
@@ -11,13 +11,13 @@ if __name__ == '__main__':
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
         #'radio://0/80/2M/E7E7E7E7E1',
-        'radio://0/80/2M/E7E7E7E7E2',
-        'radio://0/80/2M/E7E7E7E7E3',
-        'radio://0/80/2M/E7E7E7E7E4',
-        'radio://0/80/2M/E7E7E7E7E5',
-        'radio://0/80/2M/E7E7E7E7E6',
+        #'radio://0/80/2M/E7E7E7E7E2',
+        #'radio://0/80/2M/E7E7E7E7E3',
+        #'radio://0/80/2M/E7E7E7E7E4',
+        #'radio://0/80/2M/E7E7E7E7E5',
+        #'radio://0/80/2M/E7E7E7E7E6',
         #'radio://0/80/2M/E7E7E7E7E7',
-        'radio://0/80/2M/E7E7E7E7E8',
+        #'radio://0/80/2M/E7E7E7E7E8',
     }
 
     logging.basicConfig(level=logging.DEBUG)
