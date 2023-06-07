@@ -13,7 +13,7 @@ Can handle either physical (drones) or virtual (3d or text-based) representation
 
 
 class BoidManager:
-    def __init__(self, controller, flight_zone, boids):
+    def __init__(self, controller, flight_zone, boids, time_step=None):
         """
         :param controller: controller interface object
         :param flight_zone: dimensions of the flight zone
@@ -31,6 +31,8 @@ class BoidManager:
         self.flight_zone = flight_zone
 
         self.flying = False
+
+        self.time_step = time_step
 
         self.boids = boids
 
@@ -56,6 +58,11 @@ class BoidManager:
         """
         Updates the velocities of the boids
         """
+
+        # convert velocities from m/time_step to m/s
+
+        if self.time_step is not None:
+            velocities = {uid: vel * (1 / self.time_step) for uid, vel in velocities.items()}
 
         self.controller.set_swarm_velocities(velocities, yaw_rate)
 
@@ -101,7 +108,7 @@ class BoidManager:
         self.update_positions(self.positions, 0, time_to_move=2)
         time.sleep(1)
 
-    def boid_loop(self, time_step=None):
+    def boid_loop(self):
         """
         Starts the control loop that runs the boid behaviour
         """
@@ -127,10 +134,10 @@ class BoidManager:
                 other_boids = [
                     other_boid for other_boid in self.boids if other_boid.uid is not boid.uid]
 
-                boid.set_new_velocity(other_boids, time_step)
+                boid.set_new_velocity(other_boids, self.time_step)
 
             # set the boids moving
             self.update_velocities(self.velocities, 0)
 
-            if time_step is not None:
-                time.sleep(time_step)
+            if self.time_step is not None:
+                time.sleep(self.time_step)

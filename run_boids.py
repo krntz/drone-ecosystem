@@ -28,26 +28,28 @@ if __name__ == '__main__':
     boid_cohesion = 0.1
     visual_range = 1
 
+    time_step = 0.1
+
     drones = [
         Boid(flight_zone,
              uri,
              boid_separation,
              boid_alignment,
              boid_cohesion,
-             visual_range)
+             visual_range,
+             time_step)
 
         for uri in uris]
 
-    time_step = 1
 
     try:
         swarmControl = CrazyflieSwarmControl(uris,
                                              flight_zone,
                                              'radio://0/80/2M/E7E7E7E7E0')
 
-        boidManager = BoidManager(swarmControl, flight_zone, drones)
+        boidManager = BoidManager(swarmControl, flight_zone, drones, time_step)
 
-        boidManager.boid_loop(time_step)
+        boidManager.boid_loop()
     except KeyboardInterrupt:
         logger.info("Exiting")
     except Exception:

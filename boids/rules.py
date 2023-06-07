@@ -93,7 +93,7 @@ def keep_within_bounds(boid):
 
     buffer = 0.2
 
-    turning_factor = 0.1
+    turning_factor = 0.1# / boid.time_step
 
     # TODO: Scale velocity so the drone turns faster the further out-of-bounds it is
 

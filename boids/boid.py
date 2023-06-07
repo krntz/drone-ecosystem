@@ -21,7 +21,8 @@ class Boid:
                  boid_separation,
                  boid_alignment,
                  boid_cohesion,
-                 visual_range):
+                 visual_range,
+                 time_step = None):
 
         self.flight_zone = flight_zone
         self._uid = uid
@@ -39,6 +40,11 @@ class Boid:
         self.boid_cohesion = boid_cohesion
 
         self.visual_range = visual_range
+        
+        if time_step is not None:
+            self.time_step = time_step
+        else:
+            self.time_step = 1
 
     def random_init(self):
         rng = default_rng()
@@ -51,7 +57,7 @@ class Boid:
 
         self.yaw = 0
 
-        self.velocity = rng.random(3) * (0.75 - (0.75 / 2))
+        self.velocity = (rng.random(3) * (0.75 - (0.75 / 2)))# / self.time_step
         self.yaw_rate = 0
 
     def distance_to_boid(self, boid_position):
