@@ -125,6 +125,8 @@ Moves between their home-base `Mushroom` and `Flower`s within their `sensory_ran
 ### 1.1.1 `Mate`
 When `Swarm` has finished pollinating, will exit its home and move towards the active `Flower`s.
 
+Has LED deck that lights up when carrying food.
+
 **Attributes:**
 - `home`: `string` - The `uid` of the `Mushroom` the `Mate` calls home
 - `at_home`: `boolean` - `True` if the `Mate` is at its `home`; otherwise `False`
