@@ -6,15 +6,16 @@ import logging
 import math
 
 import numpy as np
+from entities.boids.rules import (avoid_others, fly_towards_center,
+                                  keep_within_bounds, limit_velocity,
+                                  match_velocity)
+from entities.entity import Entity
 from numpy.random import default_rng
-
-from boids.rules import (avoid_others, fly_towards_center, keep_within_bounds,
-                         limit_velocity, match_velocity)
 
 logger = logging.getLogger(__name__)
 
 
-class Boid:
+class Boid(Entity):
     def __init__(self,
                  flight_zone,
                  uid,
@@ -22,14 +23,13 @@ class Boid:
                  boid_alignment,
                  boid_cohesion,
                  visual_range):
+        super.__init__(uid)
 
         self.flight_zone = flight_zone
-        self._uid = uid
 
-        self._position = np.zeros(3)
         self.yaw = 0
 
-        self._velocity = np.zeros(3)
+        self.velocity = np.zeros(3)
         self.yaw_rate = 0
 
         self.boid_separation = boid_separation  # Percentage
@@ -39,6 +39,10 @@ class Boid:
         self.boid_cohesion = boid_cohesion
 
         self.visual_range = visual_range
+
+    @position.setter
+    def position(self, position):
+        self._position = position
 
     def random_init(self):
         rng = default_rng()
@@ -63,26 +67,6 @@ class Boid:
         """
 
         return [self.distance_to_boid(boid.position) for boid in boids]
-
-    @property
-    def uid(self):
-        return self._uid
-
-    @property
-    def position(self):
-        return self._position
-
-    @position.setter
-    def position(self, position):
-        self._position = position
-
-    @property
-    def velocity(self):
-        return self._velocity
-
-    @velocity.setter
-    def velocity(self, velocity):
-        self._velocity = velocity
 
     def set_new_velocity(self, other_boids, time_step):
         """

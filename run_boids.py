@@ -1,7 +1,7 @@
 import logging
 
-from boids.boid import Boid
-from boids.manager import BoidManager
+from entities.boids.boid import Boid
+from entities.boids.manager import BoidManager
 from crazyflieSwarmControl import CrazyflieSwarmControl
 from utils import FlightZone
 
