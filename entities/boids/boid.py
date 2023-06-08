@@ -19,9 +19,9 @@ class Boid(Entity):
     def __init__(self,
                  flight_zone,
                  uid,
-                 boid_separation,
-                 boid_alignment,
-                 boid_cohesion,
+                 separation,
+                 alignment,
+                 cohesion,
                  visual_range):
         super.__init__(uid)
 
@@ -32,11 +32,11 @@ class Boid(Entity):
         self.velocity = np.zeros(3)
         self.yaw_rate = 0
 
-        self.boid_separation = boid_separation  # Percentage
+        self.separation = separation  # Percentage
         self.minimum_distance = 0.3
 
-        self.boid_alignment = boid_alignment
-        self.boid_cohesion = boid_cohesion
+        self.alignment = alignment
+        self.cohesion = cohesion
 
         self.visual_range = visual_range
 
@@ -58,17 +58,20 @@ class Boid(Entity):
         self.velocity = rng.random(3) * (0.75 - (0.75 / 2))
         self.yaw_rate = 0
 
-    def distance_to_boid(self, boid_position):
-        return math.sqrt(np.sum((self.position - boid_position) ** 2))
+    def distance_to_point(self, point):
+        """
+        Returns euclidean distance between the Boid's own position and some point
+        """
+        return math.sqrt(np.sum((self.position - point) ** 2))
 
-    def distance_to_swarm(self, boid_positions):
+    def distance_to_swarm(self, positions):
         """
         Returns list of distances to all other drones
         """
 
-        return [self.distance_to_boid(boid.position) for boid in boids]
+        return [self.distance_to_point(boid.position) for boid in boids]
 
-    def set_new_velocity(self, other_boids, time_step):
+    def update(self, other_boids, time_step):
         """
         Takes the positions of all boids in the swarm, converts them to distances
         to the current boid, and figures out how to change the position

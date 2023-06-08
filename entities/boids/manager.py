@@ -127,7 +127,7 @@ class BoidManager:
                 other_boids = [
                     other_boid for other_boid in self.boids if other_boid.uid is not boid.uid]
 
-                boid.set_new_velocity(other_boids, time_step)
+                boid.update(other_boids, time_step)
 
             # set the boids moving
             self.update_velocities(self.velocities, 0)

@@ -14,3 +14,6 @@ class Entity:
     @property
     def position(self):
         return self._position
+
+    def update(self):
+        raise NotImplementedError("All entities need an update function!")
