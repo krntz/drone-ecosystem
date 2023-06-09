@@ -8,17 +8,17 @@ class PowerBed(Entity):
     def __init__(self,
                  uid: str,
                  position: any,
+                 size: any,
                  spore_positions: list,
-                 mushroom_positions: list,
-                 radius: float) -> None:
-        super.__init__(uid, position)
+                 mushroom_positions: list) -> None:
+        super().__init__(uid, position)
 
-        self.radius = radius
+        self._size = size
 
-        self._spores = [Spore("spore" + str(i), pos)
+        self._spores = [Spore(f"spore{i}", pos)
                        for i, pos in enumerate(spore_positions)]
 
-        self._mushrooms = [Mushroom("mushroom" + str(i), pos)
+        self._mushrooms = [Mushroom(f"mushroom{i}", pos)
                           for i, pos in enumerate(mushroom_positions)]
 
     @property
@@ -28,3 +28,12 @@ class PowerBed(Entity):
     @property
     def mushrooms(self) -> list:
         return self._mushrooms
+
+    @property
+    def size(self) -> any:
+        return self._size
+
+    def update(self) -> None:
+        # check if enough Spores have been deactivated, if so, start activating mushrooms
+        pass
+

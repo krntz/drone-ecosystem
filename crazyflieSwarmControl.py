@@ -28,7 +28,8 @@ class CrazyflieSwarmControl:
                  config):
         self.uris = uris            # the resource identifiers of all drones
         self.swarm_flying = False
-        # REQUIRED! Denotes for the boid manager whether the system is using a physical representation or not
+
+        # REQUIRED! Denotes for the manager whether the system is using a physical representation or not
         self._PHYSICAL = True
 
         if type(flight_zone) is not FlightZone:
@@ -42,6 +43,8 @@ class CrazyflieSwarmControl:
 
         # Grab calibration data directly from drone
         # if there is a file with saved calibration data, use that instead
+
+        # TODO: ReadMem opens and closes a link to a single drone, this is inefficient. Should be reading calibration data when the connection to the entire swarm has been setup
 
         if len(self.uris) > 1:
             try:
