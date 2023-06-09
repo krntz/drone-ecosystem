@@ -6,8 +6,7 @@ class Mushroom(Vegetation):
                  uid: str,
                  position) -> None:
 
-        super.__init__(uid=uid,
+        super().__init__(uid=uid,
                        position=position,
                        collision_radius=0.2,
-                       activation_radius=0.4,
-                       active=False)
+                       activation_radius=0.4)

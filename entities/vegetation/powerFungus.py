@@ -9,5 +9,4 @@ class PowerFungus(Vegetation):
         super.__init__(uid = uid,
                        position = position,
                        collision_radius = 0.75,
-                       activation_radius = None,
-                       active = False)
+                       activation_radius = None)

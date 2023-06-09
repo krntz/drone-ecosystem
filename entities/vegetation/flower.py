@@ -1,5 +1,7 @@
 from entities.vegetation.vegetation import Vegetation
 
+from enum import Enum, unqiue
+
 
 class Flower(Vegetation):
     def __init__(self,
@@ -7,9 +9,8 @@ class Flower(Vegetation):
                  position,
                  collision_radius: float,
                  activation_radius: float,
-                 polination_threshold: int,
-                 active: bool = False) -> None:
-        super.__init__(uid, position, collision_radius,
+                 polination_threshold: int) -> None:
+        super().__init__(uid, position, collision_radius,
                        activation_radius, active)
 
         self.polination_threshold = polination_threshold
