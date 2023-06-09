@@ -1,8 +1,8 @@
 import logging
 
-from entities.boids.boid import Boid
-from entities.boids.manager import BoidManager
 from crazyflieSwarmControl import CrazyflieSwarmControl
+from entities.boids.manager import BoidManager
+from entities.boids.standardBoid import StandardBoid
 from utils import FlightZone
 
 logger = logging.getLogger(__name__)
@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
-        #'radio://0/80/2M/E7E7E7E7E1',
-        #'radio://0/80/2M/E7E7E7E7E2',
-        #'radio://0/80/2M/E7E7E7E7E3',
-        #'radio://0/80/2M/E7E7E7E7E4',
-        #'radio://0/80/2M/E7E7E7E7E5',
-        #'radio://0/80/2M/E7E7E7E7E6',
-        #'radio://0/80/2M/E7E7E7E7E7',
-        #'radio://0/80/2M/E7E7E7E7E8',
+        # 'radio://0/80/2M/E7E7E7E7E1',
+        # 'radio://0/80/2M/E7E7E7E7E2',
+        # 'radio://0/80/2M/E7E7E7E7E3',
+        # 'radio://0/80/2M/E7E7E7E7E4',
+        # 'radio://0/80/2M/E7E7E7E7E5',
+        # 'radio://0/80/2M/E7E7E7E7E6',
+        # 'radio://0/80/2M/E7E7E7E7E7',
+        # 'radio://0/80/2M/E7E7E7E7E8',
     }
 
     logging.basicConfig(level=logging.DEBUG)
@@ -29,12 +29,12 @@ if __name__ == '__main__':
     visual_range = 1
 
     drones = [
-        Boid(flight_zone,
-             uri,
-             boid_separation,
-             boid_alignment,
-             boid_cohesion,
-             visual_range)
+        StandardBoid(uri,
+                     flight_zone,
+                     boid_separation,
+                     boid_alignment,
+                     boid_cohesion,
+                     visual_range)
 
         for uri in uris]
 
