@@ -10,11 +10,11 @@ Runs update loop for entities.
 - 1..* `Flower`
 - 1..* `Mushroom`
 - 1..* `PowerBed`
-- 2 `Mate`
-- 1 `Hermit`
-- 3 `Swarm`
-- 0/1 `Chameleon`
-- 0/1 `Predator`
+- 2 `HarvesterBoid`
+- 1 `HermitBoid`
+- 3 `SwarmBoid`
+- 0/1 `ChameleonBoid`
+- 0/1 `PredatorBoid`
 - 0..* `Tracker`
 
 # 1 Entity
@@ -35,16 +35,16 @@ Represents vegetation in the system.
 ### 1.0.1 `Flower`
 Is activated or deactivated based on its level of polination. Activates when `polination_level` reaches `polination_level`; deactivates when `polination_level` reaches 0.
 
-Main focus of attraction for `Swarm` and `Mate` `Boid`s.
+Main focus of attraction for `SwarmBoid` and `HarvesterBoid` `Boid`s.
 
-Should perhaps take some time to "synthesize" pollen into food so that `Swarm` and `Mate` do not activate at the same time?
+Should perhaps take some time to "synthesize" pollen into food so that `SwarmBoid` and `HarvesterBoid` do not activate at the same time?
 
 **Attributes:**
 - `polination_threshold`: `int` - The `polination_level` required for the plant to be activated
-- `polination_level`: `float` - The current polination level of the `Flower`, is increased when `Swarm`s carrying food are nearby
+- `polination_level`: `float` - The current polination level of the `Flower`, is increased when `SwarmBoid`s carrying food are nearby
 
 ### 1.0.2 `Hive`
-Home-base for `Mate`s.
+Home-base for `HarvesterBoid`s.
 
 Activates `Spore`s on nearby `PowerBed` when food has been consumed.
 
@@ -58,7 +58,7 @@ Activates `Spore`s on nearby `PowerBed` when food has been consumed.
 ### 1.0.3 `PowerBed`
 Represents sections of the floor in the ecosystem.
 
-Activates `Spore`s when a nearby `Hive` is saturated with food, deactivates `Spore`s and activates `Mushroom`s when a `Hermit` has fed from it.
+Activates `Spore`s when a nearby `Hive` is saturated with food, deactivates `Spore`s and activates `Mushroom`s when a `HermitBoid` has fed from it.
 
 **Attributes:**
 - `radius`: `float` - The radius of the `PowerBed` section, in meters
@@ -68,15 +68,15 @@ Activates `Spore`s when a nearby `Hive` is saturated with food, deactivates `Spo
 ### 1.0.4 `Spore`
 Activates based on how much food has been consumed by the `Hive`.
 
-When enough `Spore`s have been activated, the `Hermit` activates.
+When enough `Spore`s have been activated, the `HermitBoid` activates.
 
-The `Hermit` deactivates `Spore`s and and in turn activates `Mushrooom`s.
+The `HermitBoid` deactivates `Spore`s and and in turn activates `Mushrooom`s.
 
 ### 1.0.5 `Mushroom`
-Activates once the `Hermit` has consumed enough `Spore`s.
+Activates once the `HermitBoid` has consumed enough `Spore`s.
 
 ### 1.0.6 `PowerFungus`
-Home-base for `Swarm`. Is activated once the `Hermit` has activated enough `Mushroom`s.
+Home-base for `SwarmBoid`. Is activated once the `HermitBoid` has activated enough `Mushroom`s.
 
 **Attributes:**
 - `residents`: list of `Boid` - list of the `Boid`s that call this `PowerFungus` home
@@ -120,7 +120,7 @@ Currently represents one [Bitcraze Crazyflie 2.1](https://www.bitcraze.io/produc
     - Try to match `velocity` of the `Boid`s within its `visual_range`
     - Standard `Boid` rule #3
     - Uses `alignment` attribute
-* `move_towards_place`
+* `move_towards_point`
     - Can be used to move the `Boid` towards e.g. a plant
 * `limit_speed`
     - Speed should not exceed realistic limits
@@ -131,14 +131,15 @@ Currently represents one [Bitcraze Crazyflie 2.1](https://www.bitcraze.io/produc
     - A `Drone` hovering above another `Drone` leads to unstable behaviour
     - `Drone`s should prefer to stay at least 0.3 meters above each other
 
-### 1.1.0 `Swarm`
+### 1.1.0 `SwarmBoid`
 Moves between their home-base `PowerFungus` and `Flower`s within their `sensory_range` to pollinate.
 
 **Attributes:**
-- `home`: `string` - The `uid` of the `Mushroom` the `Boid` calls home
-- `polination_factor`: `int` - How much pollen the `Boid` can deposit in one `time_step`
-- `sensory_range`: `float` - How many meters around the `Swarm` is able to detect inactive `Flower`s
-- `detected_active_flowers`: list of `Flower`s - The active `Flower`s that the `Swarm` can detect
+- `home`: `PowerFungus` - The `PowerFungus` the `SwarmBoid` calls home
+- `at_home`: `boolean` - `True` if the `SwarmBoid` is at its `home`; otherwise `False`
+- `polination_rate`: `int` - How much pollen the `SwarmBoid` can deposit in one `time_step`
+- `sensory_range`: `float` - How many meters around the `SwarmBoid` is able to detect inactive `Flower`s
+- `detected_inactive_flowers`: list of `Flower`s - The active `Flower`s that the `SwarmBoid` can detect
 - `cohesion`: `float`
 - `alignment`: `float`
 
@@ -147,23 +148,23 @@ Moves between their home-base `PowerFungus` and `Flower`s within their `sensory_
     - Should only be with regards to `Boid`s of the same `type`
 * `match_velocity`
     - Should only be with regards to `Boid`s of the same `type`
-* `move_towards_place`
+* `move_towards_point`
     - If inactive `Flower` is detected, move towards it; otherwise, move towards `home`
 
-### 1.1.1 `Mate`
-When `Swarm` has finished pollinating, will exit its home and move towards the active `Flower`s.
+### 1.1.1 `HarvesterBoid`
+When `SwarmBoid` has finished pollinating, will exit its home and move towards the active `Flower`s.
 
 Has LED deck that lights up when carrying food.
 
 **Attributes:**
-- `home`: `string` - The `uid` of the `Mushroom` the `Mate` calls home
-- `at_home`: `boolean` - `True` if the `Mate` is at its `home`; otherwise `False`
-- `sensory_range`: `float` - How many meters around the `Mate` is able to detect active `Flower`s
-- `carrying_capacity`: `int` - How much food the `Mate` can carry
-- `current_food`: `int` - How much food the `Mate` is currently carrying
-- `collection_rate`: `int` - How much food the `Mate` can gather in one `time_step`
-- `deposit_rate`: `int` - How much food the `Mate` can deposit at its `home` in one `time_step`
-- `depositing`: `boolean` - `True` if the `Mate` is currently depositing food at its `home`; `False` otherwise
+- `home`: `string` - The `uid` of the `Mushroom` the `HarvesterBoid` calls home
+- `at_home`: `boolean` - `True` if the `HarvesterBoid` is at its `home`; otherwise `False`
+- `sensory_range`: `float` - How many meters around the `HarvesterBoid` is able to detect active `Flower`s
+- `carrying_capacity`: `int` - How much food the `HarvesterBoid` can carry
+- `current_food`: `int` - How much food the `HarvesterBoid` is currently carrying
+- `harvesting_rate`: `int` - How much food the `HarvesterBoid` can gather in one `time_step`
+- `deposit_rate`: `int` - How much food the `HarvesterBoid` can deposit at its `home` in one `time_step`
+- `depositing`: `boolean` - `True` if the `HarvesterBoid` is currently depositing food at its `home`; `False` otherwise
 - `cohesion`: `float`
 - `alignment`: `float`
 
@@ -172,26 +173,27 @@ Has LED deck that lights up when carrying food.
     - Should only be with regards to `Boid`s of the same `type`
 * `match_velocity`
     - Should only be with regards to `Boid`s of the same `type`
-* `move_towards_place`
+* `move_towards_point`
     - If active `Flower` is detected, move towards it; otherwise, move towards `home`
 
-### 1.1.2 `Hermit`
-When a `Mushroom` has started dispersing food, the `Hermit` will move towards the `PowerBed` around the `Mushroom` and start feeding on it.
+### 1.1.2 `HermitBoid`
+When a `Mushroom` has started dispersing food, the `HermitBoid` will move towards the `PowerBed` around the `Mushroom` and start feeding on it.
 
 Prefers to hang around the lower levels of the ecosystem.
 
 **Attributes:**
-- `eating_rate`: `int` - How fast the `Hermit` can eat food from the `PowerBed`
+- `eating_rate`: `int` - How fast the `HermitBoid` can eat food from the `PowerBed`
+- `state` - If the `HermitBoid` is roaming or feeding
 
 #### Rules
-* `move_towards_place`
+* `move_towards_point`
     - If active `PowerBed` is detected, move towards it; otherwise, wander around
 
-### 1.1.3 (`Chameleon`)
+### 1.1.3 (`ChameleonBoid`)
 
 #### Rules
 
-### 1.1.4 (`Predator`)
+### 1.1.4 (`PredatorBoid`)
 
 #### Rules
 
