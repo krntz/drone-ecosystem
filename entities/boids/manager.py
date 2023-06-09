@@ -37,6 +37,10 @@ class BoidManager:
         for boid in self.boids:
             boid.random_init()
 
+    def __del__(self) -> None:
+        for boid in self.boids:
+            del boid
+
     @property
     def velocities(self):
         return {boid.uid: boid.velocity for boid in self.boids}

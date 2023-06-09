@@ -111,3 +111,9 @@ def keep_within_bounds(boid):
         boid.velocity[2] -= turning_factor
     elif boid.position[2] < ((min_z + boid.flight_zone.floor_offset) + buffer):
         boid.velocity[2] += turning_factor
+
+def move_towards_point(boid):
+    raise NotImplementedError
+
+def avoid_hovering_above(boid):
+    raise NotImplementedError
