@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Entity:
-    def __init__(self, uid: str, position=np.zeros(3)) -> None:
+    def __init__(self, uid: str, position=np.zeros(3): any) -> None:
         self._position = position
 
         self._uid = uid
@@ -12,8 +12,8 @@ class Entity:
         return self._uid
 
     @property
-    def position(self):
+    def position(self) -> any:
         return self._position
 
-    def update(self):
+    def update(self) -> None:
         raise NotImplementedError("All entities need an update function!")
