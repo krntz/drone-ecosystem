@@ -5,12 +5,10 @@ from enum import Enum, auto, unique
 import numpy as np
 from entities.boids.rules import (avoid_others, keep_within_bounds,
                                   limit_velocity)
-from entities.entity import Entity
+from entities.entity import Entity, EntityTypes
 from numpy.random import default_rng
 
 logger = logging.getLogger(__name__)
-
-# TODO: Maybe Boids should have a "perception" function to figure out what it can perceive?
 
 
 @unique
@@ -43,6 +41,7 @@ class Boid(Entity):
         self.max_speed = 0.25
 
         self.separation = separation
+        # Vegetation separation must be higher since the vegetation doesn't move
         self.vegetation_separation = self.separation * 2
 
         # This should be considered the absolute minimum distance for the boids to prevent collisions
@@ -53,6 +52,7 @@ class Boid(Entity):
         self.detected_vegetation = []
 
         self._type = BoidTypes.UNDEFINED
+        self._entity_type = EntityTypes.BOID
 
     # We need to be able to set the positions for the boids
     @Entity.position.setter
@@ -74,22 +74,26 @@ class Boid(Entity):
         """
         other_boids = filter(lambda b: b.uid is not self.uid, boids)
 
-        self.detected_boids = list(filter(self.is_boid_in_range, other_boids))
+        self.detected_boids = list(
+            filter(lambda b: self.is_entity_in_range(b, self.visual_range),
+                   other_boids))
 
     def get_detected_boids_of_type(self, boid_type: any) -> list:
         return list(filter(lambda b: b.type is boid_type, self.detected_boids))
 
-    def is_boid_in_range(self, boid: any) -> bool:
+    def is_entity_in_range(self,
+                           entity: any,
+                           detection_range: float) -> bool:
         """
         Returns true if Euclidean distance to other
-        boid is less than visual range. False otherise.
+        entity is less than the specified detection range. False otherwise.
         """
 
-        return self.distance_to_point(boid.position) < self.visual_range
+        return self.distance_to_point(entity.position) < detection_range
 
     def distance_to_point(self, point: any) -> float:
         """
-        Returns euclidean distance between the Boid's own position and some point
+        Returns euclidean distance between the entity's own position and some point
         """
 
         return np.linalg.norm(self.position - point)
@@ -117,7 +121,7 @@ class Boid(Entity):
         Should be run *at least* once per time step.
         """
 
-        avoid_others(self, delta_time)
+        avoid_boids(self, delta_time)
         avoid_vegetation(self, delta_time)
         keep_within_bounds(self, delta_time)
         limit_velocity(self)

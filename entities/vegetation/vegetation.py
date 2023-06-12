@@ -1,4 +1,4 @@
-from entities.entity import Entity
+from entities.entity import Entity, EntityTypes
 
 
 class Vegetation(Entity):
@@ -17,6 +17,8 @@ class Vegetation(Entity):
         self._activation_radius = activation_radius
 
         self._active = False
+
+        self._entity_type = EntityTypes.VEGETATION
 
     @property
     def activation_radius(self) -> float:

@@ -1,7 +1,17 @@
+import abc
+from enum import Enum, auto, unique
+
 import numpy as np
 
 
-class Entity:
+@unique
+class EntityTypes(Enum):
+    UNDEFINED: int = auto()
+    BOID: int = auto()
+    VEGETAION: int = auto()
+
+
+class Entity(abc.ABC):
     def __init__(self,
                  uid: str,
                  collision_radius: float,
@@ -11,6 +21,8 @@ class Entity:
         self._uid = uid
 
         self._collision_radius = collision_radius
+
+        self._entity_type = EntityTypes.UNDEFINED
 
     @property
     def uid(self) -> str:
@@ -24,5 +36,14 @@ class Entity:
     def collision_radius(self) -> float:
         return self._collision_radius
 
+    @property
+    def entity_type(self) -> any:
+        return self._entity_type
+
+    @abc.abstractmethod
     def update(self) -> None:
-        raise NotImplementedError("All entities need an update function!")
+        """
+        Updates the boids state based on the current world state.
+
+        Should be run *at least* once per time step.
+        """
