@@ -36,9 +36,6 @@ class BoidManager:
 
         self.boids = boids
 
-        for boid in self.boids:
-            boid.random_init()
-
     def __del__(self) -> None:
         for boid in self.boids:
             del boid
@@ -95,7 +92,7 @@ class BoidManager:
                 # TODO: Make parallel
 
                 boid.perceive(self.boids)
-                boid.update(self.boids, time_step)
+                boid.update(time_step)
 
             # set the boids moving
             self.update_velocities(self.velocities, 0)

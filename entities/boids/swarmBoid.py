@@ -5,8 +5,8 @@ from entities.boids.rules import (fly_towards_center, match_velocity,
 
 class SwarmBoid(Boid):
     def __init__(self,
-                 flight_zone: any,
                  uid: str,
+                 flight_zone: any,
                  home: any) -> None:
         super().__init__(flight_zone=flight_zone,
                          uid=uid,
@@ -39,7 +39,7 @@ class SwarmBoid(Boid):
 
         match_velocity(self, self.detected_swarm_boids)
 
-        if detected_inactive_flowers:
+        if self.detected_inactive_flowers:
             # find the closest inactive flower and move towards that
             pass
 

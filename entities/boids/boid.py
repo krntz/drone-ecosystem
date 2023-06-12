@@ -114,6 +114,6 @@ class Boid(Entity):
         Updates the boids state based on the current world state.
         """
 
-        avoid_others(self, self.other_boids)
+        avoid_others(self)
         keep_within_bounds(self)
         limit_velocity(self)

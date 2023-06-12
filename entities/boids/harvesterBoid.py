@@ -5,8 +5,8 @@ from entities.boids.rules import (fly_towards_center, match_velocity,
 
 class HarvesterBoid(Boid):
     def __init__(self,
-                 flight_zone: any,
                  uid: str,
+                 flight_zone: any,
                  home: any) -> None:
         super().__init__(flight_zone=flight_zone,
                          uid=uid,
@@ -48,7 +48,7 @@ class HarvesterBoid(Boid):
 
         match_velocity(self, self.detected_harvester_boids)
 
-        if detected_active_flowers:
+        if self.detected_active_flowers:
             # find the closest active flower and move towards that
             pass
 
