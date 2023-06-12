@@ -71,48 +71,6 @@ class BoidManager:
 
         self.controller.set_swarm_velocities(velocities, yaw_rate)
 
-    def distribute_swarm(self) -> None:
-        """
-        Moves the swarm to their positions in a way that *should* avoid mid-air collisions.
-
-        Only really useful for physical systems.
-        """
-
-        logger.info("Distributing swarm across the height of the flight zone")
-
-        num_boids = len(self.boids)
-
-        height_fragment_size = self.flight_zone.z/num_boids
-
-        logger.info("Separating drones on Z-axis")
-        positions = {boid.uid: np.array([0, 0, i * height_fragment_size])
-                     for i, boid in enumerate(self.boids)}
-        logger.debug("Using the following posistions:")
-        logger.debug(positions)
-
-        self.update_positions(positions, 0, time_to_move=2, relative=True)
-        time.sleep(1)
-
-        logger.info("Moving drones to final XY-positions")
-        # TODO: This cannot be a relative move
-        positions = {boid.uid: np.array([boid.position[0],
-                                         boid.position[1],
-                                         0])
-
-                     for boid in self.boids}
-        logger.debug("Using the following posistions:")
-        logger.debug(positions)
-
-        self.update_positions(positions, 0, time_to_move=2)
-        time.sleep(1)
-
-        logger.info("Moving drones to final Z-positions")
-        logger.debug("Using the following posistions:")
-        logger.debug(self.positions)
-
-        self.update_positions(self.positions, 0, time_to_move=2)
-        time.sleep(1)
-
     def boid_loop(self, time_step=None: float | None) -> None:
         """
         Starts the control loop that runs the boid behaviour
@@ -130,14 +88,16 @@ class BoidManager:
         while self.flying:
             current_positions = self.controller.swarm_positions
 
+            # TODO: 2023-06-12 This feels inefficient...
+
             for boid in self.boids:
                 boid.position = current_positions[boid.uid]
 
             for boid in self.boids:
                 # TODO: Make parallel
 
-                boid.perceive(other_boids)
-                boid.update(other_boids, time_step)
+                boid.perceive(self.boids)
+                boid.update(self.boids, time_step)
 
             # set the boids moving
             self.update_velocities(self.velocities, 0)
