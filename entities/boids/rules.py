@@ -66,6 +66,11 @@ def match_velocity(boid: any, other_boids: list, delta_time: float) -> None:
         boid.velocity += (average_velocity - boid.velocity) * alignment
 
 
+def move_towards_point(boid: any, point: any, attraction: float) -> None:
+    boid.velocity += boid.distance_to_point(point) * attraction
+    boid.yaw_rate = boid.yaw_rate
+
+
 def limit_velocity(boid: any) -> None:
     """
     Clamps the speed of the boid to be within its min and max speed.
@@ -108,10 +113,6 @@ def keep_within_bounds(boid: any, delta_time: float) -> None:
         boid.velocity[2] -= turning_factor
     elif boid.position[2] < ((min_z + boid.flight_zone.floor_offset) + buffer):
         boid.velocity[2] += turning_factor
-
-
-def move_towards_point(boid: any, point: any) -> None:
-    raise NotImplementedError
 
 
 def avoid_hovering_above(boid: any) -> None:
