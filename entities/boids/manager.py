@@ -13,7 +13,10 @@ Can handle either physical (drones) or virtual (3d or text-based) representation
 
 
 class BoidManager:
-    def __init__(self, controller, flight_zone, boids):
+    def __init__(self,
+                 controller: any,
+                 flight_zone: any,
+                 boids: list) -> None:
         """
         :param controller: controller interface object
         :param flight_zone: dimensions of the flight zone
@@ -24,6 +27,7 @@ class BoidManager:
         # if the controller does not provide the attribute PHYSICAL,
         # we do not know if the system should use a physical representation or not.
         # physical representations require assumptions about movement times, etc.
+
         if not hasattr(self.controller, 'PHYSICAL'):
             raise Exception(
                 "Controller {} does not contain required information about physicallity of the system, exiting...".format(self.controller.__name___))
@@ -42,28 +46,32 @@ class BoidManager:
             del boid
 
     @property
-    def velocities(self):
+    def velocities(self) -> dict:
         return {boid.uid: boid.velocity for boid in self.boids}
 
     @property
-    def positions(self):
+    def positions(self) -> dict:
         return {boid.uid: boid.position for boid in self.boids}
 
-    def update_positions(self, positions, yaw, relative=False, time_to_move=None):
+    def update_positions(self,
+                         positions: list,
+                         yaw: float,
+                         relative=False: bool,
+                         time_to_move=None: float | None) -> None:
         """
         Updates the positions of the boids
         """
 
         self.controller.swarm_move(positions, yaw, time_to_move, relative)
 
-    def update_velocities(self, velocities, yaw_rate):
+    def update_velocities(self, velocities: list, yaw_rate: float) -> None:
         """
         Updates the velocities of the boids
         """
 
         self.controller.set_swarm_velocities(velocities, yaw_rate)
 
-    def distribute_swarm(self):
+    def distribute_swarm(self) -> None:
         """
         Moves the swarm to their positions in a way that *should* avoid mid-air collisions.
 
@@ -105,17 +113,17 @@ class BoidManager:
         self.update_positions(self.positions, 0, time_to_move=2)
         time.sleep(1)
 
-    def boid_loop(self, time_step=None):
+    def boid_loop(self, time_step=None: float | None) -> None:
         """
         Starts the control loop that runs the boid behaviour
         """
 
         if self.controller.PHYSICAL:
             logger.info("Using physical system")
-            #self.distribute_swarm()
+            # self.distribute_swarm()
         else:
             logger.info("Using virtual system")
-            #self.update_positions(self.positions, 0)
+            # self.update_positions(self.positions, 0)
 
         self.flying = True
 
@@ -128,9 +136,7 @@ class BoidManager:
             for boid in self.boids:
                 # TODO: Make parallel
 
-                other_boids = [
-                    other_boid for other_boid in self.boids if other_boid.uid is not boid.uid]
-
+                boid.perceive(other_boids)
                 boid.update(other_boids, time_step)
 
             # set the boids moving

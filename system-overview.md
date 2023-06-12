@@ -182,7 +182,7 @@ When a `Mushroom` has started dispersing food, the `HermitBoid` will move toward
 Prefers to hang around the lower levels of the ecosystem.
 
 **Attributes:**
-- `eating_rate`: `int` - How fast the `HermitBoid` can eat food from the `PowerBed`
+- `eating_rate`: `int` - How fast the `HermitBoid` can eat food from the `Spore`s
 - `state` - If the `HermitBoid` is roaming or feeding
 
 #### Rules

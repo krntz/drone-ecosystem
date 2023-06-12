@@ -22,15 +22,22 @@ class SwarmBoid(Boid):
         self.at_home = True
 
         self.detected_inactive_flowers = []
+        self.detected_swarm_boids = []
 
         self._type = BoidTypes.SWARM
 
-    def update(self, time_step: float) -> None:
-        other_swarm_boids = [
-            boid for boid in self.other_boids if (boid.type == self.type) and (self.distance_to_point(boid.position) <= self.visual_range)]
-        fly_towards_center(self, other_swarm_boids)
+    def perceive(self, boids: list) -> None:
+        self.update_detected_boids(boids)
 
-        match_velocity(self, other_swarm_boids)
+        self.detected_harvester_boids = self.get_detected_boids_of_type(
+            self.type)
+
+        # TODO: Perceive flowers
+
+    def update(self, time_step: float) -> None:
+        fly_towards_center(self, self.detected_swarm_boids)
+
+        match_velocity(self, self.detected_swarm_boids)
 
         if detected_inactive_flowers:
             # find the closest inactive flower and move towards that

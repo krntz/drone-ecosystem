@@ -1,76 +1,71 @@
 import math
+
 import numpy as np
 
 
-def fly_towards_center(boid, other_boids):
+def fly_towards_center(boid: any, other_boids: list) -> None:
     """
     Rule 1 in the standard boids model
 
-    Boids should fly towards the center of their swarm
+    Boids should steer towards the center of the other boids (if any)
     """
 
-    center = np.zeros(3)
-    num_neighbours = 0
+    if other_boids:
+        center = np.zeros(3)
 
-    for boid in other_boids:
-        boid_pos = boid.position
+        for b in other_boids:
+            center += b.position
 
-        if boid.distance_to_boid(boid_pos) < boid.visual_range:
-            center += boid_pos
-            num_neighbours += 1
+        center /= len(other_boids)
 
-    if num_neighbours > 0:
-        center /= num_neighbours
-
-        boid.velocity += (center - boid.position) * boid.boid_cohesion
+        boid.velocity += (center - boid.position) * boid.cohesion
         boid.yaw_rate = boid.yaw_rate
 
 
-def avoid_others(boid, other_boids):
+def avoid_others(boid: any) -> None:
     """
     Rule 2 in the standard boids model
 
     Keeps a distance between the boid and other boids to prevent mid-air collisions
     """
 
-    move = np.zeros(3)
+    # Boids outside visual range are not close enough to collide
 
-    for boid in other_boids:
-        if boid.distance_to_boid(boid.position) < boid.minimum_distance:
-            move += boid.position - boid.position
+    if boid.detected_boids:
+        move = np.zeros(3)
 
-    boid.velocity += move * boid.boid_separation
-    boid.yaw_rate = boid.yaw_rate
+        close_boids = filter(
+            lambda b: boid.distance_to_point(
+                b.position) < boid.minimum_distance,
+            boid.detected_boids
+        )
+
+        for b in close_boids:
+            move += boid.position - b.position
+
+        boid.velocity += move * boid.separation
+        boid.yaw_rate = boid.yaw_rate
 
 
-def match_velocity(boid, other_boids):
+def match_velocity(boid: any, other_boids: list) -> None:
     """
     Rule 3 in the standard boids model
 
-    Matches velocity (speed and direction) of the swarm
+    Matches velocity (speed and direction) of other boids (if any)
     """
 
-    average_velocity = np.zeros(3)
-    num_neighbours = 0
+    if other_boids:
+        average_velocity = np.zeros(3)
 
-    for boid in other_boids:
-        boid_pos = boid.position
+        for b in other_boids:
+            average_velocity += b.velocity
 
-        if boid.distance_to_boid(boid_pos) < boid.visual_range:
-            average_velocity += boid.velocity
-
-            num_neighbours += 1
-
-    if num_neighbours > 1:
-        average_velocity /= num_neighbours
-        boid.velocity += (average_velocity -
-                          boid.velocity) * boid.boid_alignment
+        average_velocity /= len(other_boids)
+        boid.velocity += (average_velocity - boid.velocity) * boid.alignment
 
 
-def limit_velocity(boid):
-    """
-    Should take into account the time per each step to ensure we aren't trying to move too fast
-    """
+def limit_velocity(boid: any) -> None:
+    # TODO: Should take into account the time per each step to ensure we aren't trying to move too fast
 
     speed_limit = 0.25
 
@@ -81,7 +76,7 @@ def limit_velocity(boid):
         boid.yaw_rate = boid.yaw_rate
 
 
-def keep_within_bounds(boid):
+def keep_within_bounds(boid: any) -> None:
     min_x = -boid.flight_zone.x/2
     max_x = boid.flight_zone.x/2
 
@@ -112,8 +107,10 @@ def keep_within_bounds(boid):
     elif boid.position[2] < ((min_z + boid.flight_zone.floor_offset) + buffer):
         boid.velocity[2] += turning_factor
 
-def move_towards_point(boid):
+
+def move_towards_point(boid: any, point: any) -> None:
     raise NotImplementedError
 
-def avoid_hovering_above(boid):
+
+def avoid_hovering_above(boid: any) -> None:
     raise NotImplementedError
