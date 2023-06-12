@@ -1,6 +1,15 @@
+#!/usr/bin/env python3
+
 from entities.boids.boid import Boid, BoidTypes
 from entities.boids.rules import (fly_towards_center, match_velocity,
                                   move_towards_point)
+
+__author__ = "Amandus Krantz"
+__credits__ = ["Rachael Garret", "Joseph La Delfa"]
+__license__ = "GPL-3"
+__maintainer__ = "Amandus Krantz"
+__email__ = "amandus.krantz@lucs.lu.se"
+__status__ = "Prototype"
 
 
 class HarvesterBoid(Boid):

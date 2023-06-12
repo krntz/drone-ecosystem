@@ -1,6 +1,15 @@
+#!/usr/bin/env python3
+
 from enum import Enum, auto, unique
 
 from entities.boids.boid import Boid, BoidTypes
+
+__author__ = "Amandus Krantz"
+__credits__ = ["Rachael Garret", "Joseph La Delpha"]
+__license__ = "GPL-3"
+__maintainer__ = "Amandus Krantz"
+__email__ = "amandus.krantz@lucs.lu.se"
+__status__ = "Prototype"
 
 
 class HermitBoid(Boid):

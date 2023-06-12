@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import logging
 import math
 from enum import Enum, auto, unique
@@ -7,6 +9,13 @@ from entities.boids.rules import (avoid_others, keep_within_bounds,
                                   limit_velocity)
 from entities.entity import Entity, EntityTypes
 from numpy.random import default_rng
+
+__author__ = "Amandus Krantz"
+__credits__ = ["Rachael Garret", "Joseph La Delpha", "Ben Eater"]
+__license__ = "GPL-3"
+__maintainer__ = "Amandus Krantz"
+__email__ = "amandus.krantz@lucs.lu.se"
+__status__ = "Prototype"
 
 logger = logging.getLogger(__name__)
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import logging
 import time
 from threading import Event
@@ -10,6 +12,13 @@ from utils.lighthouseDataHelper import LighthouseDataHelper
 from utils.utils import FlightZone
 
 from controllers.controller import Controller
+
+__author__ = "Amandus Krantz"
+__credits__ = ["Rachael Garret", "Joseph La Delpha", "Bitcraze AB"]
+__license__ = "GPL-3"
+__maintainer__ = "Amandus Krantz"
+__email__ = "amandus.krantz@lucs.lu.se"
+__status__ = "Prototype"
 
 logger = logging.getLogger(__name__)
 

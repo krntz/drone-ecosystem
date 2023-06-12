@@ -1,7 +1,16 @@
+#!/usr/bin/env python3
+
 import numpy as np
 
 from entities.entity import Entity
 from entities.vegetation import mushroom.Mushroom, spore.Spore
+
+__author__ = "Amandus Krantz"
+__credits__ = ["Rachael Garret", "Joseph La Delpha"]
+__license__ = "GPL-3"
+__maintainer__ = "Amandus Krantz"
+__email__ = "amandus.krantz@lucs.lu.se"
+__status__ = "Prototype"
 
 
 class PowerBed(Entity):
@@ -16,10 +25,10 @@ class PowerBed(Entity):
         self._size = size
 
         self._spores = [Spore(f"spore{i}", pos)
-                       for i, pos in enumerate(spore_positions)]
+                        for i, pos in enumerate(spore_positions)]
 
         self._mushrooms = [Mushroom(f"mushroom{i}", pos)
-                          for i, pos in enumerate(mushroom_positions)]
+                           for i, pos in enumerate(mushroom_positions)]
 
     @property
     def spores(self) -> list:
@@ -36,4 +45,3 @@ class PowerBed(Entity):
     def update(self) -> None:
         # check if enough Spores have been deactivated, if so, start activating mushrooms
         pass
-

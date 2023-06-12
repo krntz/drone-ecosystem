@@ -1,7 +1,16 @@
+#!/usr/bin/env python3
+
 import abc
 from enum import Enum, auto, unique
 
 import numpy as np
+
+__author__ = "Amandus Krantz"
+__credits__ = ["Rachael Garret", "Joseph La Delpha"]
+__license__ = "GPL-3"
+__maintainer__ = "Amandus Krantz"
+__email__ = "amandus.krantz@lucs.lu.se"
+__status__ = "Prototype"
 
 
 @unique

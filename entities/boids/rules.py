@@ -1,4 +1,13 @@
+#!/usr/bin/env python3
+
 import numpy as np
+
+__author__ = "Amandus Krantz"
+__credits__ = ["Rachael Garret", "Joseph La Delpha", "Ben Eater"]
+__license__ = "GPL-3"
+__maintainer__ = "Amandus Krantz"
+__email__ = "amandus.krantz@lucs.lu.se"
+__status__ = "Prototype"
 
 
 def fly_towards_center(boid: any, other_boids: list, delta_time: float) -> None:

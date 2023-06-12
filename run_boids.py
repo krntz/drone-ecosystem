@@ -1,9 +1,17 @@
+#!/usr/bin/env python3
+
 import logging
 
 from controllers.crazyflieController import CrazyflieController
 from entities.entityManager import EntityManager
 from entities.boids.standardBoid import StandardBoid
 from utils.utils import FlightZone
+
+__author__ = "Amandus Krantz"
+__license__ = "GPL-3"
+__maintainer__ = "Amandus Krantz"
+__email__ = "amandus.krantz@lucs.lu.se"
+__status__ = "Prototype"
 
 logger = logging.getLogger(__name__)
 
