@@ -43,11 +43,14 @@ class Boid(Entity):
         self.max_speed = 0.25
 
         self.separation = separation
+        self.vegetation_separation = self.separation * 2
 
         # This should be considered the absolute minimum distance for the boids to prevent collisions
         self.minimum_distance = 0.3
 
         self.detected_boids = []
+
+        self.detected_vegetation = []
 
         self._type = BoidTypes.UNDEFINED
 
@@ -110,8 +113,11 @@ class Boid(Entity):
     def update(self, delta_time: float) -> None:
         """
         Updates the boids state based on the current world state.
+
+        Should be run *at least* once per time step.
         """
 
         avoid_others(self, delta_time)
+        avoid_vegetation(self, delta_time)
         keep_within_bounds(self, delta_time)
         limit_velocity(self)

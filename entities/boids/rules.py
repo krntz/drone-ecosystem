@@ -22,27 +22,36 @@ def fly_towards_center(boid: any, other_boids: list, delta_time: float) -> None:
         boid.yaw_rate = boid.yaw_rate
 
 
-def avoid_others(boid: any, delta_time: float) -> None:
+def avoid_boids(boid: any, delta_time: float) -> None:
+    _avoid_entities(boid, boid.detected_boids, boid.separation, delta_time)
+
+
+def avoid_vegetation(boid: any, delta_time: float) -> None:
+    _avoid_entities(boid, boid.detected_vegetation,
+                    boid.vegetation_separation, delta_time)
+
+
+def _avoid_entities(boid: any, entities: list, separation: float, delta_time: float) -> None:
     """
     Rule 2 in the standard boids model
 
-    Keeps a distance between the boid and other boids to prevent mid-air collisions
+    Keeps a distance between the boid and other entities to prevent collision
     """
 
-    # Boids outside visual range are not close enough to collide
+    # Entities outside visual range are not close enough to collide
 
-    if boid.detected_boids:
+    if entities:
         separation = boid.separation * delta_time
         move = np.zeros(3)
 
-        close_boids = filter(
-            lambda b: boid.distance_to_point(
-                b.position) < boid.minimum_distance,
-            boid.detected_boids
+        close_entities = filter(
+            lambda e: boid.distance_to_point(
+                e.position) < boid.minimum_distance,
+            entities
         )
 
-        for b in close_boids:
-            move += boid.position - b.position
+        for e in close_entities:
+            move += boid.position - e.position
 
         boid.velocity += move * separation
         boid.yaw_rate = boid.yaw_rate
@@ -66,8 +75,8 @@ def match_velocity(boid: any, other_boids: list, delta_time: float) -> None:
         boid.velocity += (average_velocity - boid.velocity) * alignment
 
 
-def move_towards_point(boid: any, point: any, attraction: float) -> None:
-    boid.velocity += boid.distance_to_point(point) * attraction
+def move_towards_point(boid: any, point: any, attraction: float, delta_time: float) -> None:
+    boid.velocity += boid.distance_to_point(point) * (attraction * delta_time)
     boid.yaw_rate = boid.yaw_rate
 
 
