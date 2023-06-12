@@ -10,30 +10,35 @@ Can handle either physical (drones) or virtual (3d or text-based) representation
 """
 
 
-class BoidManager:
+class EntityManager:
     def __init__(self,
                  update_rate: float,
                  controller: any,
                  flight_zone: any,
-                 boids: list) -> None:
+                 boids: list,
+                 vegetation: list) -> None:
         """
         :param update_rate: the rate at which the main loop is run
         :param controller: controller interface object
         :param flight_zone: dimensions of the flight zone
         :param boids: List of boid-objects
+        :param vegetation: List of vegetation-objects
         """
         self._update_rate = update_rate
         self.controller = controller
 
         self.flight_zone = flight_zone
 
-        self.flying = False
-
         self.boids = boids
+
+        self.vegetation = vegetation
 
     def __del__(self) -> None:
         for boid in self.boids:
             del boid
+
+        for vegetation in self.vegetation:
+            del vegetation
 
     @property
     def velocities(self) -> dict:
@@ -71,26 +76,27 @@ class BoidManager:
         else:
             logger.info("Using virtual system")
 
-        self.flying = True
-
         last_tick = time.time()
-
-        while self.flying:
+        while True:
             start = time.time()
             delta_time = start - last_tick
+            current_positions = self.controller.swarm_positions
 
-            current_positions = self.controller.positions
+            # TODO: 2023-06-12 Looping over self.boids twice feels inefficient
 
-            # TODO: 2023-06-12 This feels inefficient...
+            # TODO: 2023-06-12 These loops can (I think) be run in parallel.
+            # That might require large changes to the swarm controller though...
 
             for boid in self.boids:
                 boid.position = current_positions[boid.uid]
 
             for boid in self.boids:
-                # TODO: Make parallel
-
                 boid.perceive(self.boids)
                 boid.update(delta_time)
+                vegetation.update(time_step)
+
+            for vegetation in self.vegetation:
+                vegetation.update(time_step)
 
             # set the boids moving
             self.update_velocities(self.velocities, 0)

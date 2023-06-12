@@ -1,7 +1,7 @@
 import logging
 
 from controllers.crazyflieController import CrazyflieController
-from entities.boids.manager import BoidManager
+from entities.entityManager import EntityManager
 from entities.boids.standardBoid import StandardBoid
 from utils.utils import FlightZone
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
         for uri in uris]
 
     with CrazyflieController(uris, flight_zone, 'radio://0/80/2M/E7E7E7E7E0') as swarmController:
-        boidManager = BoidManager(
+        entityManager = EntityManager(
             update_rate, swarmController, flight_zone, drones)
 
-        boidManager.boid_loop()
+        entityManager.boid_loop()
