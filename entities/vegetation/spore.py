@@ -6,7 +6,7 @@ class Spore(Vegetation):
                  uid: str,
                  position: any) -> None:
 
-        super().__init(uid=uid, 
-                     position=position, 
-                     collision_radius=0.1,
-                     activation_radius=0.2)
+        super().__init(uid=uid,
+                       position=position,
+                       collision_radius=0.1,
+                       activation_radius=0.2)

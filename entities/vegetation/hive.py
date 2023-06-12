@@ -10,7 +10,7 @@ class Hive(Vegetation):
                  food_threshold: int,
                  power_bed: any,
                  current_food: int = 0) -> None:
-        super.__init__(uid=uid,
+        super().__init__(uid=uid,
                        position=position,
                        collision_radius=0.5,
                        activation_radius=0.7,
