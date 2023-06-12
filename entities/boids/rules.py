@@ -46,7 +46,7 @@ def _avoid_entities(boid: any, entities: list, separation: float, delta_time: fl
 
         close_entities = filter(
             lambda e: boid.distance_to_point(
-                e.position) < boid.minimum_distance,
+                e.position) + e.collision_radius < boid.minimum_distance,
             entities
         )
 

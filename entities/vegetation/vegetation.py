@@ -12,17 +12,16 @@ class Vegetation(Entity):
             raise ValueError(
                 "The collision radius cannot be larger than the activation radius.")
 
-        super().__init__(uid, position)
+        super().__init__(uid, colision_radius, position)
 
-        self._collision_radius = collision_radius
         self._activation_radius = activation_radius
 
-        self.active = False
-
-    @property
-    def collision_radius(self) -> float:
-        return self._collision_radius
+        self._active = False
 
     @property
     def activation_radius(self) -> float:
         return self._activation_radius
+
+    @property
+    def active(self):
+        return self._active

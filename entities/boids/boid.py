@@ -27,7 +27,7 @@ class Boid(Entity):
                  uid: str,
                  flight_zone: any,
                  separation: float) -> None:
-        super().__init__(uid)
+        super().__init__(uid, 0.05)
 
         self._flight_zone = flight_zone
 

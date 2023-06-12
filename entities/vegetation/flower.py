@@ -8,8 +8,10 @@ class Flower(Vegetation):
                  collision_radius: float,
                  activation_radius: float,
                  polination_threshold: int) -> None:
-        super().__init__(uid, position, collision_radius,
-                         activation_radius, active)
+        super().__init__(uid,
+                         position,
+                         collision_radius,
+                         activation_radius)
 
         self.polination_threshold = polination_threshold
         self.polination_level = 0.0

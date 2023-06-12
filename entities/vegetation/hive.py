@@ -8,18 +8,16 @@ class Hive(Vegetation):
                  residents: list,
                  occupants: list,
                  food_threshold: int,
-                 power_bed: any,
-                 current_food: int = 0) -> None:
+                 power_bed: any) -> None:
         super().__init__(uid=uid,
-                       position=position,
-                       collision_radius=0.5,
-                       activation_radius=0.7,
-                       active=False)
+                         position=position,
+                         collision_radius=0.5,
+                         activation_radius=0.7)
 
         self.residents = residents
         self.occupants = occupants
 
-        self.current_food = current_food
+        self.current_food = 0
         self._food_threshold = food_threshold
 
         self.power_bed = power_bed
