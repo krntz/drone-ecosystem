@@ -84,7 +84,7 @@ class Boid(Entity):
 
         return self.distance_to_point(boid.position) < self.visual_range
 
-    def distance_to_point(self, point: any) -> list:
+    def distance_to_point(self, point: any) -> float:
         """
         Returns euclidean distance between the Boid's own position and some point
         """
