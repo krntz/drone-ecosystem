@@ -21,13 +21,6 @@ class BoidManager:
         """
         self.controller = controller
 
-        # if the controller does not provide the attribute PHYSICAL,
-        # we do not know if the system should use a physical representation or not.
-        # physical representations require assumptions about movement times, etc.
-        if not hasattr(self.controller, 'PHYSICAL'):
-            raise Exception(
-                "Controller {} does not contain required information about physicallity of the system, exiting...".format(self.controller.__name___))
-
         self.flight_zone = flight_zone
 
         self.flying = False
@@ -108,15 +101,15 @@ class BoidManager:
 
         if self.controller.PHYSICAL:
             logger.info("Using physical system")
-            #self.distribute_swarm()
+            # self.distribute_swarm()
         else:
             logger.info("Using virtual system")
-            #self.update_positions(self.positions, 0)
+            # self.update_positions(self.positions, 0)
 
         self.flying = True
 
         while self.flying:
-            current_positions = self.controller.swarm_positions
+            current_positions = self.controller.positions
 
             for boid in self.boids:
                 boid.position = current_positions[boid.uid]
