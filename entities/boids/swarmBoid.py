@@ -1,9 +1,16 @@
+from enum import Enum, auto, unique
+
 from entities.boids.boid import Boid, BoidTypes
 from entities.boids.rules import (fly_towards_center, match_velocity,
                                   move_towards_point)
 
 
 class SwarmBoid(Boid):
+    @unique
+    class States(Enum):
+        ROAMING: int = auto()
+        POLLINATING: int = auto()
+
     def __init__(self,
                  uid: str,
                  flight_zone: any,
@@ -25,6 +32,11 @@ class SwarmBoid(Boid):
         self.detected_swarm_boids = []
 
         self._type = BoidTypes.SWARM
+        self._state = self.States.ROAMING
+
+    def deposit_pollen(self, flower: any) -> None:
+        # is called when we are within a certain distance of a flower
+        pass
 
     def perceive(self, boids: list) -> None:
         self.update_detected_boids(boids)
@@ -41,6 +53,8 @@ class SwarmBoid(Boid):
 
         if self.detected_inactive_flowers:
             # find the closest inactive flower and move towards that
+
+            # if we are close enough to the flower, start pollinating it
             pass
 
         super().update(delta_time)
