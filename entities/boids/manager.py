@@ -1,8 +1,6 @@
 import logging
 import time
 
-import numpy as np
-
 logger = logging.getLogger(__name__)
 
 """
@@ -56,8 +54,8 @@ class BoidManager:
     def update_positions(self,
                          positions: list,
                          yaw: float,
-                         relative=False: bool,
-                         time_to_move=None: float | None) -> None:
+                         relative: bool = False,
+                         time_to_move: float | None = None) -> None:
         """
         Updates the positions of the boids
         """
@@ -71,7 +69,7 @@ class BoidManager:
 
         self.controller.set_swarm_velocities(velocities, yaw_rate)
 
-    def boid_loop(self, time_step=None: float | None) -> None:
+    def boid_loop(self, time_step: float | None = None) -> None:
         """
         Starts the control loop that runs the boid behaviour
         """

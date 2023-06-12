@@ -1,11 +1,12 @@
 import logging
 import math
-from enum import Enum, unique
+from enum import Enum, auto, unique
 
 import numpy as np
 from entities.boids.rules import (avoid_others, keep_within_bounds,
                                   limit_velocity)
 from entities.entity import Entity
+from numpy.random import default_rng
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,8 @@ class Boid(Entity):
 
         self._flight_zone = flight_zone
 
+        rng = default_rng()
+
         self.position = rng.random(3) * np.array([
             (self.flight_zone.x - 0.2) - (self.flight_zone.x - 0.2) / 2,
             (self.flight_zone.y - 0.2) - (self.flight_zone.y - 0.2) / 2,
@@ -50,7 +53,8 @@ class Boid(Entity):
 
         self._type = BoidTypes.UNDEFINED
 
-    @position.setter
+    # We need to be able to set the positions for the boids
+    @Entity.position.setter
     def position(self, position: any) -> None:
         self._position = position
 

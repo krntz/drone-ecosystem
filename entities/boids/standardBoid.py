@@ -26,7 +26,7 @@ class StandardBoid(Boid):
 
         self.visual_range = visual_range
 
-        self.type = BoidTypes.STANDARD
+        self._type = BoidTypes.STANDARD
 
     def update(self, other_boids, time_step):
         """

@@ -2,7 +2,7 @@ import numpy as np
 
 
 class Entity:
-    def __init__(self, uid: str, position=np.zeros(3): any) -> None:
+    def __init__(self, uid: str, position: any = np.zeros(3)) -> None:
         self._position = position
 
         self._uid = uid
