@@ -67,8 +67,6 @@ class CrazyflieSwarmControl:
 
         self.swarm = Swarm(uris, factory=factory)
 
-        self.swarm.open_links()
-
         # Write calibration data to swarm
 
         if len(self.uris) > 1:
@@ -81,6 +79,11 @@ class CrazyflieSwarmControl:
             self.swarm.parallel_safe(
                 ReadWriteLighthouseCalibration.WriteMem, args)
 
+    def __enter__(self):
+        logger.debug("Starting swarm")
+
+        self.swarm.open_links()
+
         self.safety_checks()
 
         self.swarm_flying = False
@@ -89,17 +92,14 @@ class CrazyflieSwarmControl:
 
         self.swarm.parallel_safe(self.__start_position_logging)
 
-    def __del__(self):
-        logger.info("Deleting Crazyflie swarm")
+        return self
 
-        # Assume the swarm is flying when garbage collecting to prevent
-        # flying without control software
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        logger.debug("Shutting down swarm")
+        self.swarm.parallel_safe(self.__land)
+        time.sleep(2)
 
-        if hasattr(self, 'swarm'):
-            self.swarm.parallel_safe(self.__land)
-            time.sleep(2)
-
-            self.swarm.close_links()
+        self.swarm.close_links()
 
         self.swarm_flying = False
 

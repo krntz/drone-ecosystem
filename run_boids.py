@@ -40,20 +40,8 @@ if __name__ == '__main__':
 
     time_step = 1
 
-    try:
-        swarmControl = CrazyflieSwarmControl(uris,
-                                             flight_zone,
-                                             'radio://0/80/2M/E7E7E7E7E0')
+    with CrazyflieSwarmControl(uris, flight_zone, 'radio://0/80/2M/E7E7E7E7E0') as swarmControl:
 
         boidManager = BoidManager(swarmControl, flight_zone, drones)
 
         boidManager.boid_loop(time_step)
-    except KeyboardInterrupt:
-        logger.info("Exiting")
-    except Exception:
-        swarmControl.swarm_land(True)
-        raise
-    finally:
-        swarmControl.swarm_land(True)
-        del swarmControl
-        del boidManager
