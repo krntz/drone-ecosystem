@@ -14,7 +14,7 @@ from utils.utils import FlightZone
 from controllers.controller import Controller
 
 __author__ = "Amandus Krantz"
-__credits__ = ["Rachael Garret", "Joseph La Delpha", "Bitcraze AB"]
+__credits__ = ["Rachael Garrett", "Joseph La Delfa", "Bitcraze AB"]
 __license__ = "GPL-3"
 __maintainer__ = "Amandus Krantz"
 __email__ = "amandus.krantz@lucs.lu.se"

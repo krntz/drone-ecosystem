@@ -4,7 +4,7 @@ import logging
 import time
 
 __author__ = "Amandus Krantz"
-__credits__ = ["Rachael Garret", "Joseph La Delpha"]
+__credits__ = ["Rachael Garrett", "Joseph La Delfa"]
 __license__ = "GPL-3"
 __maintainer__ = "Amandus Krantz"
 __email__ = "amandus.krantz@lucs.lu.se"
@@ -39,7 +39,6 @@ class EntityManager:
         self.flight_zone = flight_zone
 
         self.boids = boids
-
         self.vegetation = vegetation
 
     def __del__(self) -> None:
@@ -50,12 +49,16 @@ class EntityManager:
             del vegetation
 
     @property
-    def velocities(self) -> dict:
+    def boid_velocities(self) -> dict:
         return {boid.uid: boid.velocity for boid in self.boids}
 
     @property
-    def positions(self) -> dict:
+    def boid_positions(self) -> dict:
         return {boid.uid: boid.position for boid in self.boids}
+
+    @property
+    def vegetation_positions(self) -> dict:
+        return {vegetation.uid: vegetation.position for vegetation in self.vegetation}
 
     def update_positions(self,
                          positions: list,
@@ -100,15 +103,16 @@ class EntityManager:
                 boid.position = current_positions[boid.uid]
 
             for boid in self.boids:
-                boid.perceive(self.boids)
+                boid.perceive(self.boids, self.vegetation)
                 boid.update(delta_time)
-                vegetation.update(time_step)
 
             for vegetation in self.vegetation:
                 vegetation.update(time_step)
 
             # set the boids moving
-            self.update_velocities(self.velocities, 0)
+            self.update_velocities(self.boid_velocities, 0)
+
+            # TODO: Make default time_step 0 instead to avoid this if-statement
 
             last_tick = time.time()
             time.sleep(max(self._update_rate - (time.time() - start), 0))

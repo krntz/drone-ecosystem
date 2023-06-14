@@ -3,7 +3,7 @@
 import numpy as np
 
 __author__ = "Amandus Krantz"
-__credits__ = ["Rachael Garret", "Joseph La Delpha", "Ben Eater"]
+__credits__ = ["Rachael Garrett", "Joseph La Delfa", "Ben Eater"]
 __license__ = "GPL-3"
 __maintainer__ = "Amandus Krantz"
 __email__ = "amandus.krantz@lucs.lu.se"
@@ -46,8 +46,6 @@ def _avoid_entities(boid: any, entities: list, separation: float, delta_time: fl
 
     Keeps a distance between the boid and other entities to prevent collision
     """
-
-    # Entities outside visual range are not close enough to collide
 
     if entities:
         separation = boid.separation * delta_time

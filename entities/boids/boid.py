@@ -5,13 +5,13 @@ import math
 from enum import Enum, auto, unique
 
 import numpy as np
-from entities.boids.rules import (avoid_others, keep_within_bounds,
+from entities.boids.rules import (avoid_boids, keep_within_bounds,
                                   limit_velocity)
-from entities.entity import Entity, EntityTypes
+from entities.entity import Entity
 from numpy.random import default_rng
 
 __author__ = "Amandus Krantz"
-__credits__ = ["Rachael Garret", "Joseph La Delpha", "Ben Eater"]
+__credits__ = ["Rachael Garrett", "Joseph La Delfa", "Ben Eater"]
 __license__ = "GPL-3"
 __maintainer__ = "Amandus Krantz"
 __email__ = "amandus.krantz@lucs.lu.se"
@@ -34,15 +34,22 @@ class Boid(Entity):
                  uid: str,
                  flight_zone: any,
                  separation: float) -> None:
-        super().__init__(uid, 0.05)
+        super().__init__(uid=uid, collision_radius=0.05)
 
         self._flight_zone = flight_zone
 
-        rng = default_rng()
+        # used to detect other boids
+        self.visual_range = math.inf
+
+        # this is mainly used to detect vegetation
+        # not all boids may be "equipped" with a sensory_range,
+        # in which case it's the same as the visual range
+        self.sensory_range = self.visual_range
 
         self.position = np.zeros(3)
         self.yaw = 0
 
+        rng = default_rng()
         self.velocity = rng.random(3) * (0.25 - (0.25 * 2))
         self.yaw_rate = 0
 
@@ -61,7 +68,6 @@ class Boid(Entity):
         self.detected_vegetation = []
 
         self._type = BoidTypes.UNDEFINED
-        self._entity_type = EntityTypes.BOID
 
     # We need to be able to set the positions for the boids
     @Entity.position.setter
@@ -76,19 +82,14 @@ class Boid(Entity):
     def type(self) -> any:
         return self._type
 
-    def update_detected_boids(self, boids: list) -> None:
-        """
-        The boid is only able to perceive other boids within its
-        limited visual range.
-        """
-        other_boids = filter(lambda b: b.uid is not self.uid, boids)
+    def get_entities_of_type(self, entities: list, entity_type: any) -> list:
+        return list(filter(lambda e: e.type is entity_type, entities))
 
-        self.detected_boids = list(
-            filter(lambda b: self.is_entity_in_range(b, self.visual_range),
-                   other_boids))
+    def get_entities_in_range(self,
+                              entities: list,
+                              detection_range: float) -> list:
 
-    def get_detected_boids_of_type(self, boid_type: any) -> list:
-        return list(filter(lambda b: b.type is boid_type, self.detected_boids))
+        return list(filter(lambda e: self.is_entity_in_range(e, self.detection_range), entities))
 
     def is_entity_in_range(self,
                            entity: any,
@@ -107,21 +108,29 @@ class Boid(Entity):
 
         return np.linalg.norm(self.position - point)
 
-    def distance_to_swarm(self, swarm: list) -> list:
+    def distance_to_entities(self, entities: list) -> dict:
         """
         Returns list of distances to all other drones
         """
 
-        return [self.distance_to_point(boid.position) for boid in swarm]
+        return {entity.uid: self.distance_to_point(entity.position) for entity in entities}
 
-    def perceive(self, boids: list) -> None:
+    def perceive(self, boids: list, vegetation: list) -> None:
         """
         Updates the boids perception of the world state.
 
         Should be run *at least* once per time step.
         """
 
-        self.update_detected_boids(boids)
+        # TODO: I would like to generalize this to take in an arbitrary world state that
+        # is made sense of using the abilities of each boid, rather than sending lists
+
+        other_boids = filter(lambda b: b.uid is not self.uid, boids)
+        self.detected_boids = self.get_entities_in_range(other_boids,
+                                                         self.visual_range)
+
+        self.detected_vegetation = self.get_entities_in_range(vegetation,
+                                                              self.sensory_range)
 
     def update(self, delta_time: float) -> None:
         """

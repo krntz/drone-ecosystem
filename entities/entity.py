@@ -6,7 +6,7 @@ from enum import Enum, auto, unique
 import numpy as np
 
 __author__ = "Amandus Krantz"
-__credits__ = ["Rachael Garret", "Joseph La Delpha"]
+__credits__ = ["Rachael Garrett", "Joseph La Delfa"]
 __license__ = "GPL-3"
 __maintainer__ = "Amandus Krantz"
 __email__ = "amandus.krantz@lucs.lu.se"
@@ -48,6 +48,10 @@ class Entity(abc.ABC):
     @property
     def entity_type(self) -> any:
         return self._entity_type
+
+    @property
+    def sub_type(self) -> any:
+        return self._sub_type
 
     @abc.abstractmethod
     def update(self) -> None:
