@@ -5,4 +5,4 @@ A control system for autonomous drones. Based on Boids model.
 Design:
 Rachael Garrett - rachaelg@kth.se
 
-Joseph la Delfa
+Joseph La Delfa ([@cafeciaojoe](https://github.com/cafeciaojoe)) - https://cafeciaojoe.com - cafeciaojoe@gmail.com
