@@ -1,17 +1,9 @@
 import logging
 
-from boids.boid import Boid
-from boids.manager import BoidManager
-from crazyflieSwarmControl import CrazyflieSwarmControl
-
 from controllers.crazyflieController import CrazyflieController
 from entities.boids.manager import BoidManager
 from entities.boids.standardBoid import StandardBoid
 from utils import FlightZone
-
-<< << << < HEAD
-== == == =
->>>>>> > controller-base
 
 logger = logging.getLogger(__name__)
 
