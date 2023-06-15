@@ -4,11 +4,11 @@ from threading import Event
 
 import cflib.crtp
 import numpy as np
+import ReadWriteLighthouseCalibration
 from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.swarm import CachedCfFactory, Swarm
 
-import ReadWriteLighthouseCalibration
-from utils import FlightZone
+from controllers.controller import Controller
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ Interface with Bitcraze's Crazyflie drones
 """
 
 
-class CrazyflieSwarmControl:
+class CrazyflieController(Controller):
     """
     Controller class for setting up, managing, and shutting down swarms of Crazyflies
     """
@@ -26,18 +26,12 @@ class CrazyflieSwarmControl:
                  uris,
                  flight_zone,
                  config):
-        self.uris = uris            # the resource identifiers of all drones
+        super().__init__(uris, flight_zone)
+
         self.swarm_flying = False
 
         # REQUIRED! Denotes for the manager whether the system is using a physical representation or not
         self._PHYSICAL = True
-
-        if type(flight_zone) is not FlightZone:
-            raise TypeError("flight_zone type should be namedtuple FlightZone")
-
-        self.flight_zone = flight_zone
-
-        self.swarm_positions = {uri: np.zeros(3) for uri in self.uris}
 
         cflib.crtp.init_drivers()
 
@@ -222,16 +216,8 @@ class CrazyflieSwarmControl:
 
         self.swarm.parallel_safe(self.__set_velocity, args)
 
-    def get_swarm_positions(self):
-        """
-        Returns a dict, keyed by URI, containing the xyz-coords for the drone swarm
-        """
-        positions = self.swarm.get_estimated_positions()
-
-        return {uri: np.array([pos.x, pos.y, pos.z]) for uri, pos in positions.items()}
-
     def __position_callback(self, timestamp, data, log_conf):
-        self.swarm_positions[log_conf.cf.link_uri] = np.array(
+        self.positions[log_conf.cf.link_uri] = np.array(
             [data['kalman.stateX'], data['kalman.stateY'], data['kalman.stateZ']])
 
     def __start_position_logging(self, scf):

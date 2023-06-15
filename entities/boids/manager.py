@@ -22,14 +22,6 @@ class BoidManager:
         """
         self.controller = controller
 
-        # if the controller does not provide the attribute PHYSICAL,
-        # we do not know if the system should use a physical representation or not.
-        # physical representations require assumptions about movement times, etc.
-
-        if not hasattr(self.controller, 'PHYSICAL'):
-            raise Exception(
-                "Controller {} does not contain required information about physicallity of the system, exiting...".format(self.controller.__name___))
-
         self.flight_zone = flight_zone
 
         self.flying = False
@@ -81,7 +73,7 @@ class BoidManager:
         self.flying = True
 
         while self.flying:
-            current_positions = self.controller.swarm_positions
+            current_positions = self.controller.positions
 
             # TODO: 2023-06-12 This feels inefficient...
 

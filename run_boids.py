@@ -1,9 +1,17 @@
 import logging
 
+from boids.boid import Boid
+from boids.manager import BoidManager
 from crazyflieSwarmControl import CrazyflieSwarmControl
+
+from controllers.crazyflieController import CrazyflieController
 from entities.boids.manager import BoidManager
 from entities.boids.standardBoid import StandardBoid
 from utils import FlightZone
+
+<< << << < HEAD
+== == == =
+>>>>>> > controller-base
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +48,7 @@ if __name__ == '__main__':
 
     time_step = 1
 
-    with CrazyflieSwarmControl(uris, flight_zone, 'radio://0/80/2M/E7E7E7E7E0') as swarmControl:
-
-        boidManager = BoidManager(swarmControl, flight_zone, drones)
+    with CrazyflieController(uris, flight_zone, 'radio://0/80/2M/E7E7E7E7E0') as swarmController:
+        boidManager = BoidManager(swarmController, flight_zone, drones)
 
         boidManager.boid_loop(time_step)
