@@ -3,8 +3,8 @@
 import logging
 
 from controllers.crazyflieController import CrazyflieController
-from entities.entityManager import EntityManager
 from entities.boids.standardBoid import StandardBoid
+from entities.worldManager import WorldManager
 from utils.utils import FlightZone
 
 __author__ = "Amandus Krantz"
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     update_rate = 1.0/60
 
-    drones = [
+    boids = [
         StandardBoid(uri,
                      flight_zone,
                      boid_separation,
@@ -48,8 +48,13 @@ if __name__ == '__main__':
 
         for uri in uris]
 
-    with CrazyflieController(uris, flight_zone, 'radio://0/80/2M/E7E7E7E7E0') as swarmController:
-        entityManager = EntityManager(
-            update_rate, swarmController, flight_zone, drones)
+    vegetation = []
 
-        entityManager.boid_loop()
+    with CrazyflieController(uris, flight_zone, 'radio://0/80/2M/E7E7E7E7E0') as swarmController:
+        worldManager = WorldManager(update_rate,
+                                    swarmController,
+                                    flight_zone,
+                                    boids,
+                                    vegetation)
+
+        worldManager.world_loop(update_rate)

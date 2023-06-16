@@ -15,11 +15,12 @@ logger = logging.getLogger(__name__)
 """
 Manages the boids and runs the control loop.
 
-Can handle either physical (drones) or virtual (3d or text-based) representations.
+Can handle either physical (drones or other robots) or
+virtual (3d or text-based) representations.
 """
 
 
-class EntityManager:
+class WorldManager:
     def __init__(self,
                  update_rate: float,
                  controller: any,
@@ -78,7 +79,7 @@ class EntityManager:
 
         self.controller.set_swarm_velocities(velocities, yaw_rate)
 
-    def boid_loop(self) -> None:
+    def world_loop(self) -> None:
         """
         Starts the control loop that runs the boid behaviour
         """
@@ -98,6 +99,13 @@ class EntityManager:
 
             # TODO: 2023-06-12 These loops can (I think) be run in parallel.
             # That might require large changes to the swarm controller though...
+
+            # TODO: 2023-06-16 Re parallelization: Rather than running this
+            # synchronously, it may be a better idea to run the entities async
+            # and have the WorldManager broadcast new world states. Each entity
+            # would then run its own update loop. That would mean the boids would
+            # need to communicate with the controller to update their positions
+            # independently though.
 
             for boid in self.boids:
                 boid.position = current_positions[boid.uid]
