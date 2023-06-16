@@ -24,21 +24,24 @@ class SwarmBoid(Boid):
     def __init__(self,
                  uid: str,
                  flight_zone: any,
+                 polination_rate: int,
                  home: any) -> None:
         super().__init__(flight_zone=flight_zone,
                          uid=uid,
                          separation=1)
+        self.polination_rate = polination_rate
+
         self.alignment = 1
         self.cohesion = 1
         self.visual_range = 0.5
-
-        self.polination_rate = 1
         self.sensory_range = 1.0
+
+        self.polination_range = 0.2
 
         self.home = home
         self.at_home = True
 
-        self.detected_inactive_flowers = []
+        self.detected_open_flowers = []
         self.detected_swarm_boids = []
 
         self._state = self._States.ROAMING
@@ -48,34 +51,31 @@ class SwarmBoid(Boid):
     def state(self) -> any:
         return self._state
 
-    def deposit_pollen(self, flower: any) -> None:
-        # is called when we are within a certain distance of a flower
-        pass
+    def pollinate(self, flower: any) -> None:
+        flower.pollen_level += self.polination_rate
 
     def perceive(self, boids: list, vegetation: list) -> None:
         super().perceive(boids, vegetation)
 
-        self.detected_harvester_boids = self.get_entities_of_type(self.detected_boids,
-                                                                  self.type)
+        self.detected_swarm_boids = self.get_entities_of_type(
+            self.detected_boids, self.type)
 
-        detected_flowers = self.get_entities_of_type(self.detected_vegetation,
-                                                     VegetationTypes.FLOWER)
-        self.detected_inactive_flowers = list(
-            filter(lambda f: not f.active, detected_flowers))
+        detected_flowers = self.get_entities_of_type(
+            self.detected_vegetation, VegetationTypes.FLOWER)
+
+        self.detected_open_flowers = sorted(
+            filter(lambda f: f.open, detected_flowers),
+            key=lambda f: self.distance_to_point(f.position))
 
     def update(self, delta_time: float) -> None:
-        if self.detected_swarm_boids:
-            fly_towards_center(self, self.detected_swarm_boids, delta_time)
-            match_velocity(self, self.detected_swarm_boids, delta_time)
+        fly_towards_center(self, self.detected_swarm_boids, delta_time)
+        match_velocity(self, self.detected_swarm_boids, delta_time)
 
-        if self.detected_inactive_flowers:
-            # find the closest inactive flower and move towards that
-            distance_to_flowers = self.distance_to_entities(
-                self.detected_inactive_flowers)
+        if self.detected_open_flowers:
+            move_towards_point(
+                self, self.detected_open_flowers[0].position, 1)
 
-            closest_flower = min(distance_to_flowers,
-                                 key=distance_to_flowers.get())
-
-            # if we are close enough to the flower, start pollinating it
+            if self.distance_to_point(self.detected_open_flowers[0]) < self.pollination_range:
+                self.polinate(self.detected_open_flowers[0])
 
         super().update(delta_time)
