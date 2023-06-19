@@ -26,7 +26,8 @@ class Flower(Vegetation):
                  activation_radius: float,
                  pollen_capacity: int,
                  pollen_threshold: int,
-                 energy_threshold: int) -> None:
+                 energy_threshold: int,
+                 synthesis_rate: int) -> None:
         super().__init__(uid=uid,
                          position=position,
                          collision_radius=collision_radius,
@@ -35,11 +36,10 @@ class Flower(Vegetation):
         self._pollen_capacity = pollen_capacity
         self._pollen_threshold = pollen_threshold
         self._energy_threshold = energy_threshold
+        self._synthesis_rate = synthesis_rate
 
         self.pollen_level = 0.0
         self.energy_level = 0.0
-
-        self._synthesis_rate = 1.0
 
         self._type = VegetationTypes.FLOWER
 
@@ -72,9 +72,7 @@ class Flower(Vegetation):
                 Once there is enough pollen, the Flower will move to the synthesis state.
                 """
 
-                if self.pollen_level < self.pollen_capacity:
-                    self._open = True
-                else:
+                if self.pollen_level >= self.pollen_capacity:
                     self._open = False
                     self._state = self._States.SYNTHESISING
 
@@ -103,6 +101,7 @@ class Flower(Vegetation):
 
                 if self.energy_level < self._energy_threshold:
                     self._state = self._States.INACTIVE
+                    self._open = True
 
             case _:
                 raise ValueError(f"Flower with id {self._uid} has unknown state {self._state}")
