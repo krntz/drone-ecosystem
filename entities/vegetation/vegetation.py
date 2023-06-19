@@ -26,7 +26,7 @@ class Vegetation(Entity):
                  uid: str,
                  position: any,
                  collision_radius: float,
-                 activation_radius: float = None) -> None:
+                 activation_radius: float | None = None) -> None:
 
         if self.collision_radius > self.activation_radius:
             raise ValueError(
@@ -42,7 +42,7 @@ class Vegetation(Entity):
         self._type = VegetationTypes.UNDEFINED
 
     @property
-    def activation_radius(self) -> float:
+    def activation_radius(self) -> float | None:
         return self._activation_radius
 
     @property
