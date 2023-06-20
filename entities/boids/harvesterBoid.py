@@ -42,10 +42,17 @@ class HarvesterBoid(Boid):
         self._type = BoidTypes.HARVESTER
 
     def deposit_energy(self) -> None:
-        pass
+        if (self._current_energy < self._deposit_rate) < 0:
+            deposit_amount = self._current_energy
+        else:
+            deposit_amount = self._deposit_rate
+
+        self._current_energy -= deposit_amount
+
+        self._home.receive_energy(deposit_amount)
 
     def harvest_energy(self, flower: any) -> None:
-        self._current_energy += flower.release_energy()
+        self._current_energy += flower.release_energy(self._harvesting_rate)
 
     def perceive(self, boids: list, vegetation: list) -> None:
         """
