@@ -46,14 +46,36 @@ class Flower(Vegetation):
         self._state = self._States.INACTIVE
 
         self._open = True
+        self._flowering = False
 
    @property
    def open(self) -> bool:
        return self._open
 
    @property
+   def flowering(self) -> bool:
+       return self._flowering
+
+   @property
    def state(self) -> any:
        return self._state
+
+   def release_energy(self) -> int:
+       """
+       Releases part of the Flowers stored energy.
+
+       If there is just a little bit of energy left in the flower, it releases
+       all of it.
+       """
+
+       if (self._pollen_level - self._release_rate) < 0:
+           release_amount = self._pollen_level
+       else:
+           release_amount = self._release_rate
+
+        self._pollen_level -= release_amount
+
+        return release_amount
 
     def update(self) -> None:
         """
@@ -67,9 +89,11 @@ class Flower(Vegetation):
         match self._state:
             case self._States.INACTIVE:
                 """
-                In the inactive state, the SwarmBoids will deposit "pollen" in the Flower.
+                In the inactive state, the SwarmBoids will deposit "pollen"
+                in the Flower.
 
-                Once there is enough pollen, the Flower will move to the synthesis state.
+                Once there is enough pollen, the Flower will move to
+                the synthesis state.
                 """
 
                 if self.pollen_level >= self.pollen_capacity:
@@ -78,9 +102,11 @@ class Flower(Vegetation):
 
             case self._States.SYNTHESISING:
                 """
-                In the synthesis state, the Flower converts available pollen to energy.
+                In the synthesis state, the Flower converts available pollen
+                to energy.
 
-                When there is enough energy, the Flower moves to the active state.
+                When there is enough energy, the Flower flowers and moves to
+                an active state.
                 """
 
                 # TODO: These should be tuned
@@ -89,18 +115,20 @@ class Flower(Vegetation):
 
                 if self.energy_level > self._energy_threshold:
                     self._state = self._States.ACTIVE
+                    self._flowering = True
 
             case self._States.ACTIVE:
                 """
-                In the active state, the HarvesterBoids are attracted to the Flower
-                and starts harvesting the energy.
+                In the active state, the HarvesterBoids are attracted to the
+                Flower and starts harvesting the energy.
 
-                Once the energy has been depleted, the Flower moves back to its
-                inactive state.
+                Once the energy has been depleted, the Flower moves back to
+                its inactive state.
                 """
 
-                if self.energy_level < self._energy_threshold:
+                if self.energy_level == 0:
                     self._state = self._States.INACTIVE
+                    self._flowering = False
                     self._open = True
 
             case _:
