@@ -36,6 +36,8 @@ class SwarmBoid(Boid):
         # (Should be used if/when we want the SwarmBoids to acually land at home)
 
         self._polination_rate = polination_rate
+        self._home = home
+
         self._current_pollen = 0
 
         self.alignment = 1
@@ -44,8 +46,6 @@ class SwarmBoid(Boid):
         self.sensory_range = 1.0
 
         self._polination_range = 0.2
-
-        self._home = home
 
         self._detected_open_flowers = []
         self._detected_swarm_boids = []
@@ -84,8 +84,11 @@ class SwarmBoid(Boid):
         super().perceive(boids, vegetation)
 
         self._detected_swarm_boids = self.get_entities_of_type(
-            self.detected_boids, self.type)
+            self.detected_boids, self._type)
 
+        # TODO: 2023-06-19 This is a very naive and inefficient way of finding
+        # a target flower. Might be more interesting/efficient methods of
+        # doing it? (Similar code in hervesterBoid)
         detected_flowers = self.get_entities_of_type(
             self.detected_vegetation, VegetationTypes.FLOWER)
 
@@ -113,11 +116,12 @@ class SwarmBoid(Boid):
             # the closest open flower as long as it has pollen. There might be
             # more interesting ways of implementing this behaviour?
 
-            move_towards_point(
-                self, self._detected_open_flowers[0].position, 1, delta_time)
+            target_flower = self._detected_open_flowers[0]
 
-            if self.distance_to_point(self._detected_open_flowers[0]) < self._pollination_range:
-                self.deposit_pollen(self._detected_open_flowers[0])
+            move_towards_point(self, target_flower.position, 1, delta_time)
+
+            if self.distance_to_point(target_flower) < self._pollination_range:
+                self.deposit_pollen(target_flower)
         else:
             # 2023-06-19 Perhaps the SwarmBoid should "hunt around" for new
             # Flowers if it still has pollen left but cannot detect any open
