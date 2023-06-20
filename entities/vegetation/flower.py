@@ -60,7 +60,7 @@ class Flower(Vegetation):
    def state(self) -> any:
        return self._state
 
-   def release_energy(self) -> int:
+   def release_energy(self, release_rate: int) -> int:
        """
        Releases part of the Flowers stored energy.
 
@@ -68,10 +68,10 @@ class Flower(Vegetation):
        all of it.
        """
 
-       if (self._pollen_level - self._release_rate) < 0:
+       if (self._pollen_level - release_rate) < 0:
            release_amount = self._pollen_level
        else:
-           release_amount = self._release_rate
+           release_amount = release_rate
 
         self._pollen_level -= release_amount
 
