@@ -49,7 +49,11 @@ class CrazyflieController(Controller):
 
         self.swarm = Swarm(uris, factory=factory)
 
-        self.swarm.open_links()
+        try:
+            self.swarm.open_links()
+        except Exception as e:
+            raise RuntimeError(
+                "Failed to open links to swarm, are the drones turned on and the CrazyRadio plugged in?")
 
         if len(self.uris) > 1:
             data_helper = LighthouseDataHelper()
@@ -84,13 +88,15 @@ class CrazyflieController(Controller):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        logger.debug("Shutting down swarm")
-        self.swarm.parallel_safe(self.__land)
-        time.sleep(2)
+        try:
+            if hasattr(self, 'swarm'):
+                if self.swarm_flying:
+                    logger.debug("Swarm is flying, landing before deletion")
+                    self.swarm.parallel_safe(self.__land)
 
-        self.swarm.close_links()
-
-        self.swarm_flying = False
+                self.swarm.close_links()
+        except KeyboardInterrupt:
+            pass
 
     def safety_checks(self):
         """
