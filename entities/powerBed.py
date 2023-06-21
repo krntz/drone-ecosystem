@@ -18,17 +18,22 @@ class PowerBed(Entity):
                  uid: str,
                  position: any,
                  size: any,
-                 spore_positions: list,
-                 mushroom_positions: list) -> None:
+                 num_spores: list,
+                 num_mushrooms: list) -> None:
+        """
+        The PowerBed keeps track of all vegetation in the "world" and facilitates
+        the non-autonomous interactions between the plants.
+
+        Conceptually: Think of it like the nervous system/mycelia of the system.
+        """
+
         super().__init__(uid, position)
 
         self._size = size
 
-        self._spores = [Spore(f"spore{i}", pos)
-                        for i, pos in enumerate(spore_positions)]
+        self._spores = [Spore() for i in range(num_spores)]
 
-        self._mushrooms = [Mushroom(f"mushroom{i}", pos)
-                           for i, pos in enumerate(mushroom_positions)]
+        self._mushrooms = [Mushroom() for i in range(num_mushrooms)]
 
     @property
     def spores(self) -> list:

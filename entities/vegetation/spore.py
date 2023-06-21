@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from entities.vegetation.vegetation import Vegetation
+from dataclasses import dataclass
 
 __author__ = "Amandus Krantz"
 __credits__ = ["Rachael Garrett", "Joseph La Delfa"]
@@ -10,12 +10,6 @@ __email__ = "amandus.krantz@lucs.lu.se"
 __status__ = "Prototype"
 
 
-class Spore(Vegetation):
-    def __init__(self,
-                 uid: str,
-                 position: any) -> None:
-
-        super().__init(uid=uid,
-                       position=position,
-                       collision_radius=0.1,
-                       activation_radius=0.2)
+@dataclass
+class Spore:
+    active: bool = False
