@@ -1,3 +1,4 @@
+import logging
 import time
 from threading import Event
 
@@ -5,10 +6,8 @@ import cflib.crtp
 import numpy as np
 from cflib.crazyflie.swarm import CachedCfFactory, Swarm
 
-import ReadWriteLighthouseCalibration
-from utils import FlightZone
-
-import logging
+from utils.lighthouseDataHelper import LighthouseDataHelper
+from utils.utils import FlightZone
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +27,8 @@ class CrazyflieSwarmControl:
                  config):
         self.uris = uris            # the resource identifiers of all drones
         self.swarm_flying = False
-        self._PHYSICAL = True       # REQUIRED! Denotes for the boid manager whether the system is using a physical representation or not
+        # REQUIRED! Denotes for the boid manager whether the system is using a physical representation or not
+        self._PHYSICAL = True
 
         if type(flight_zone) is not FlightZone:
             raise TypeError("flight_zone type should be namedtuple FlightZone")
@@ -37,43 +37,25 @@ class CrazyflieSwarmControl:
 
         cflib.crtp.init_drivers()
 
-        # Grab calibration data directly from drone
-        # if there is a file with saved calibration data, use that instead
-
-        if len(self.uris) > 1:
-            try:
-                if config.startswith("radio://"):
-                    logger.info(
-                        "Getting calibration data from drone with URI: " + config)
-                    mem = ReadWriteLighthouseCalibration.ReadMem(config)
-                    geo_dict, calib_dict = mem.getGeoAndCalib()
-                else:
-                    logger.info(
-                        "Getting calibration data from file: " + config)
-                    geo_dict, calib_dict = ReadWriteLighthouseCalibration.ReadFromFile(
-                        config)
-            except Exception as e:
-                raise e
-        else:
-            logger.info("Only one drone found, assuming it is calibrated")
-
         factory = CachedCfFactory(rw_cache='./cache')
 
         self.swarm = Swarm(uris, factory=factory)
 
         self.swarm.open_links()
 
-        # Write calibration data to swarm
-
         if len(self.uris) > 1:
-            logger.info("Writing calibration data to swarm")
-            args = {}
+            data_helper = LighthouseData()
 
-            for uri in self.uris:
-                args[uri] = [geo_dict, calib_dict]
+            input_is_drone = config.startswith("radio://")
 
-            self.swarm.parallel_safe(
-                ReadWriteLighthouseCalibration.WriteMem, args)
+            if input_is_drone:
+                data_helper.read_from_drone(self.swarm._cfs[config])
+            else:
+                data_helper.read_from_file(config)
+
+            self.swarm.parallel_safe(data_helper.write_to_drone)
+        else:
+            logger.debug("Only one drone found, assuming it is calibrated")
 
         self.safety_checks()
 
@@ -107,14 +89,16 @@ class CrazyflieSwarmControl:
         3. Resets estimators and waits for good lock on positions
         """
         logger.info("Running pre-flight safety checks")
-        logger.info("Running light check. Ensure red light on all connected drones.")
+        logger.info(
+            "Running light check. Ensure red light on all connected drones.")
         self.swarm.parallel_safe(self.__light_check)
 
         # TODO: This aint working for some reason...
         # logger.info("Checking for Lighthouse deck")
         # self.swarm.parallel_safe(self.__deck_check)
 
-        logger.info("Resetting estimators. Will block until good lock on position.")
+        logger.info(
+            "Resetting estimators. Will block until good lock on position.")
         self.swarm.reset_estimators()
 
     def __light_check(self, scf):

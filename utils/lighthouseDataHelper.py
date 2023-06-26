@@ -21,33 +21,23 @@ __status__ = "Prototype"
 logger = logging.getLogger(__name__)
 
 
-class WriteMem:
-    def __init__(self, geo_data, calib_data):
+class LighthouseDataHelper:
+    def __init__(self):
         self._write_event = Event()
+        self._read_event = Event()
 
-        self._geo_data = geo_data
-        self._calib_data = calib_data
+        self._geometry_data = None
+        self._calibration_data = None
 
-    def to_drone(self, scf):
-        """
-        Writes geometry and calibration data to a Synchronous Crazyflie instance.
-        """
+    def _geo_read_callback(self, geo_data: dict) -> None:
+        self._geometry_data = geo_data
+        self._read_event.set()
 
-        helper = LighthouseMemHelper(scf.cf)
+    def _calib_read_callback(self, calib_data: dict) -> None:
+        self._calibration_data = calib_data
+        self._read_event.set()
 
-        logger.debug(
-            f"Writing geometry data to drone with URI {scf.cf.link_uri}")
-        helper.write_geos(self._geo_data, self._data_written)
-        self._write_event.wait()
-
-        self._write_event.clear()
-
-        logger.debug(
-            f"Writing calibration data to drone with URI {scf.cf.link_uri}")
-        helper.write_calibs(self._calib_data, self._data_written)
-        self._write_event.wait()
-
-    def _data_written(self, success):
+    def _data_written_callback(self, success: bool) -> None:
         if success:
             print('Data written')
         else:
@@ -55,62 +45,22 @@ class WriteMem:
 
         self._write_event.set()
 
-    def to_file(self, filename: str):
-        """
-        Writes geometry and calibration data to a local file.
-        """
-
-        geo_dict = {i: geo.as_file_object()
-                    for i, geo in self._geo_data.items()}
-
-        calib_dict = {i: calib.as_file_object()
-                      for i, calib in self._calib_data.items()}
-
-        file_dict = {"geos": geo_dict, "calibs": calib_dict}
-
-        logger.debug(f"Writing geometry and calibration data to {filename}")
-        with open(filename, 'w') as f:
-            yaml.dump(file_dict, f)
-
-
-class ReadMem:
-    def __init__(self) -> None:
-        self._read_event = Event()
-        self._geo_data = {}
-        self._calib_data = {}
-
-    @property
-    def geo_data(self):
-        return self._geo_data
-
-    @property
-    def calib_data(self):
-        return self._calib_data
-
-    def from_drone(self, scf) -> None:
+    def read_from_drone(self, scf: SyncCrazyflie) -> None:
         """
         Reads geometry and calibration data from a Synchronous Crazyflie instance.
         """
 
         helper = LighthouseMemHelper(scf.cf)
 
-        helper.read_all_geos(self._geo_read_ready)
+        helper.read_all_geos(self._geo_read_callback)
         self._read_event.wait()
 
         self._read_event.clear()
 
-        helper.read_all_calibs(self._calib_read_ready)
+        helper.read_all_calibs(self._calib_read_callback)
         self._read_event.wait()
 
-    def _geo_read_ready(self, geo_data) -> None:
-        self._geo_data = geo_data
-        self._read_event.set()
-
-    def _calib_read_ready(self, calib_data) -> None:
-        self._calib_data = calib_data
-        self._read_event.set()
-
-    def from_file(self, filename: str) -> None:
+    def read_from_file(self, filename: str) -> None:
         """
         Reads geometry and calibration data from a local file.
         """
@@ -146,6 +96,60 @@ class ReadMem:
                 bsCalib.sweeps[j].ogeephase = sweep["ogeephase"]
 
             self.calib_dict[i] = bsCalib
+
+    def write_to_drone(self, scf: SyncCrazyflie):
+        """
+        Writes geometry and calibration data to a Synchronous Crazyflie instance.
+        """
+
+        if not self._geometry_data:
+            raise RuntimeError(
+                "No geometry data to write, need to read from drone/file first!")
+
+        if not self._calibration_data:
+            raise RuntimeError(
+                "No calibration data to write, need to read from drone/file first!")
+
+        helper = LighthouseMemHelper(scf.cf)
+
+        logger.debug(
+            f"Writing geometry data to drone with URI {scf.cf.link_uri}")
+        helper.write_geos(self._geometry_data, self._data_written_callback)
+        self._write_event.wait()
+
+        self._write_event.clear()
+
+        logger.debug(
+            f"Writing calibration data to drone with URI {scf.cf.link_uri}")
+        helper.write_calibs(self._calibration_data,
+                            self._data_written_callback)
+        self._write_event.wait()
+
+    def write_to_file(self, filename: str):
+        """
+        Writes geometry and calibration data to a local file.
+        """
+
+        if not self._geometry_data:
+            raise RuntimeError(
+                "No geometry data to write, need to read from drone/file first!")
+
+        if not self._calibration_data:
+            raise RuntimeError(
+                "No calibration data to write, need to read from drone/file first!")
+
+        # TODO: 2023-06-26 What is "i" here?
+        geo_dict = {i: geo.as_file_object()
+                    for i, geo in self._geometry_data.items()}
+
+        calib_dict = {i: calib.as_file_object()
+                      for i, calib in self._calibration_data.items()}
+
+        file_dict = {"geos": geo_dict, "calibs": calib_dict}
+
+        logger.debug(f"Writing geometry and calibration data to {filename}")
+        with open(filename, 'w') as f:
+            yaml.dump(file_dict, f)
 
 
 def main() -> None:
