@@ -22,13 +22,13 @@
 
 from __future__ import annotations
 
+import argparse
 import logging
 import pickle
 import time
 from threading import Event
 
-import cflib.crtp  # noqa
-import matplotlib.pyplot as plt
+import cflib.crtp
 import numpy as np
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.mem.lighthouse_memory import LighthouseBsGeometry
@@ -75,8 +75,6 @@ received by the Crazyflie before this script is executed.
 '''
 
 
-
-
 REFERENCE_DIST = 1.0
 
 
@@ -96,6 +94,7 @@ def record_angles_average(scf: SyncCrazyflie) -> LhCfPoseSample:
     is_ready.wait()
 
     angles_calibrated = {}
+
     for bs_id, data in recorded_angles.items():
         angles_calibrated[bs_id] = data[1]
 
@@ -140,79 +139,12 @@ def record_angles_sequence(scf: SyncCrazyflie, recording_time_s: float) -> list[
     return result
 
 
-def parse_recording_time(recording_time: str, default: int) -> int:
-    """Interpret recording time input by user"""
-    try:
-        return int(recording_time)
-    except ValueError:
-        return default
-
-
 def print_base_stations_poses(base_stations: dict[int, Pose]):
     """Pretty print of base stations pose"""
+
     for bs_id, pose in sorted(base_stations.items()):
         pos = pose.translation
         print(f'    {bs_id + 1}: ({pos[0]}, {pos[1]}, {pos[2]})')
-
-
-def set_axes_equal(ax):
-    '''Make axes of 3D plot have equal scale so that spheres appear as spheres,
-    cubes as cubes, etc..  This is one possible solution to Matplotlib's
-    ax.set_aspect('equal') and ax.axis('equal') not working for 3D.
-
-    Input
-    ax: a matplotlib axis, e.g., as output from plt.gca().
-    '''
-
-    x_limits = ax.get_xlim3d()
-    y_limits = ax.get_ylim3d()
-    z_limits = ax.get_zlim3d()
-
-    x_range = abs(x_limits[1] - x_limits[0])
-    x_middle = np.mean(x_limits)
-    y_range = abs(y_limits[1] - y_limits[0])
-    y_middle = np.mean(y_limits)
-    z_range = abs(z_limits[1] - z_limits[0])
-    z_middle = np.mean(z_limits)
-
-    # The plot bounding box is a sphere in the sense of the infinity
-    # norm, hence I call half the max range the plot radius.
-    plot_radius = 0.5*max([x_range, y_range, z_range])
-
-    ax.set_xlim3d([x_middle - plot_radius, x_middle + plot_radius])
-    ax.set_ylim3d([y_middle - plot_radius, y_middle + plot_radius])
-    ax.set_zlim3d([z_middle - plot_radius, z_middle + plot_radius])
-
-
-def visualize(cf_poses: list[Pose], bs_poses: list[Pose]):
-    """Visualize positions of base stations and Crazyflie positions"""
-    # Set to True to visualize positions
-    # Requires PyPlot
-    visualize_positions = False
-    if visualize_positions:
-
-        positions = np.array(list(map(lambda x: x.translation, cf_poses)))
-
-        fig = plt.figure()
-        ax = fig.add_subplot(projection='3d')
-
-        x_cf = positions[:, 0]
-        y_cf = positions[:, 1]
-        z_cf = positions[:, 2]
-
-        ax.scatter(x_cf, y_cf, z_cf)
-
-        positions = np.array(list(map(lambda x: x.translation, bs_poses)))
-
-        x_bs = positions[:, 0]
-        y_bs = positions[:, 1]
-        z_bs = positions[:, 2]
-
-        ax.scatter(x_bs, y_bs, z_bs, c='red')
-
-        set_axes_equal(ax)
-        print('Close graph window to continue')
-        plt.show()
 
 
 def write_to_file(name: str,
@@ -223,11 +155,6 @@ def write_to_file(name: str,
     with open(name, 'wb') as handle:
         data = (origin, x_axis, xy_plane, samples)
         pickle.dump(data, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-
-def load_from_file(name: str):
-    with open(name, 'rb') as handle:
-        return pickle.load(handle)
 
 
 def estimate_geometry(origin: LhCfPoseSample,
@@ -244,10 +171,10 @@ def estimate_geometry(origin: LhCfPoseSample,
     print_base_stations_poses(initial_guess.bs_poses)
 
     print(f'{len(cleaned_matched_samples)} samples will be used')
-    visualize(initial_guess.cf_poses, initial_guess.bs_poses.values())
 
     solution = LighthouseGeometrySolver.solve(
         initial_guess, cleaned_matched_samples, LhDeck4SensorPositions.positions)
+
     if not solution.success:
         print('Solution did not converge, it might not be good!')
 
@@ -264,6 +191,7 @@ def estimate_geometry(origin: LhCfPoseSample,
     print('  Base stations at:')
     print_base_stations_poses(solution.bs_poses)
     print('  Solution match per base station:')
+
     for bs_id, value in solution.error_info['bs'].items():
         print(f'    {bs_id + 1}: {value}')
 
@@ -285,14 +213,13 @@ def estimate_geometry(origin: LhCfPoseSample,
     print('  Base stations at:')
     print_base_stations_poses(bs_scaled_poses)
 
-    visualize(cf_scaled_poses, bs_scaled_poses.values())
-
     return bs_scaled_poses
 
 
 def upload_geometry(scf: SyncCrazyflie, bs_poses: dict[int, Pose]):
     """Upload the geometry to the Crazyflie"""
     geo_dict = {}
+
     for bs_id, pose in bs_poses.items():
         geo = LighthouseBsGeometry()
         geo.origin = pose.translation.tolist()
@@ -315,7 +242,7 @@ def estimate_from_file(file_name: str):
     estimate_geometry(origin, x_axis, xy_plane, samples)
 
 
-def connect_and_estimate(uri: str, file_name: str | None = None):
+def connect_and_estimate(uri: str, recording_time: int, file_name: str | None = None):
     """Connect to a Crazyflie, collect data and estimate the geometry of the system"""
     print(f'Step 1. Connecting to the Crazyflie on uri {uri}...')
     with SyncCrazyflie(uri, cf=Crazyflie(rw_cache='./cache')) as scf:
@@ -328,11 +255,13 @@ def connect_and_estimate(uri: str, file_name: str | None = None):
 
         origin = None
         do_repeat = True
+
         while do_repeat:
             input('Press return when ready. ')
             print('  Recording...')
             measurement = record_angles_average(scf)
             do_repeat = False
+
             if measurement is not None:
                 origin = measurement
             else:
@@ -342,11 +271,13 @@ def connect_and_estimate(uri: str, file_name: str | None = None):
               'This position defines the direction of the X-axis, but it is also used for scaling of the system.')
         x_axis = []
         do_repeat = True
+
         while do_repeat:
             input('Press return when ready. ')
             print('  Recording...')
             measurement = record_angles_average(scf)
             do_repeat = False
+
             if measurement is not None:
                 x_axis = [measurement]
             else:
@@ -356,10 +287,12 @@ def connect_and_estimate(uri: str, file_name: str | None = None):
         print('Multiple samples can be recorded if you want to, type "r" before you hit enter to repeat the step.')
         xy_plane = []
         do_repeat = True
+
         while do_repeat:
             do_repeat = 'r' == input('Press return when ready. ').lower()
             print('  Recording...')
             measurement = record_angles_average(scf)
+
             if measurement is not None:
                 xy_plane.append(measurement)
             else:
@@ -369,12 +302,10 @@ def connect_and_estimate(uri: str, file_name: str | None = None):
         print('Step 5. We will now record data from the space you plan to fly in and optimize the base station ' +
               'geometry based on this data. Move the Crazyflie around, try to cover all of the space, make sure ' +
               'all the base stations are received and do not move too fast.')
-        default_time = 20
-        recording_time = input(f'Enter the number of seconds you want to record ({default_time} by default), ' +
-                               'recording starts when you hit enter. ')
-        recording_time_s = parse_recording_time(recording_time, default_time)
+        input(
+            f'Will record for {recording_time} seconds, recording starts when you hit enter. ')
         print('  Recording started...')
-        samples = record_angles_sequence(scf, recording_time_s)
+        samples = record_angles_sequence(scf, recording_time)
         print('  Recording ended')
 
         if file_name:
@@ -391,20 +322,31 @@ def connect_and_estimate(uri: str, file_name: str | None = None):
         print('Geometry uploaded')
 
 
-# Only output errors from the logging framework
-logging.basicConfig(level=logging.ERROR)
+def main() -> None:
+    # Only output errors from the logging framework
+    logging.basicConfig(level=logging.ERROR)
 
-if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Calibrates Crazyflie drones with IR-lighthouses")
+
+    parser.add_argument('-t', '--target', default='radio://0/80/2M/E7E7E7E7E0',
+                        help='URI of a Crazyflie drone to calibrate')
+
+    parser.add_argument('-f', '--file', required=False, dest='filename',
+                        help='Optional name of file to write calibration data to')
+
+    parser.add_argument('-r', '--recordingTime', required=False, dest='recordingTime', type=int,
+                        default=20, help="How many seconds to record position data for (default=20 seconds)")
+
+    args = parser.parse_args()
+
     # Initialize the low-level drivers
     cflib.crtp.init_drivers()
 
-    uri = uri_helper.uri_from_env(default='radio://0/80/2M/E7E7E7E7E0')
+    uri = uri_helper.uri_from_env(default=args.target)
 
-    # Set a file name to write the measurement data to file. Useful for debugging
-    file_name = None
-    # file_name = 'lh_geo_estimate_data.pickle'
+    connect_and_estimate(uri, args.recordingTime, file_name=args.filename)
 
-    connect_and_estimate(uri, file_name=file_name)
 
-    # Run the estimation on data from file instead of live measurements
-    # estimate_from_file(file_name)
+if __name__ == '__main__':
+    main()
