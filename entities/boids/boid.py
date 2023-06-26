@@ -5,8 +5,8 @@ import math
 from enum import Enum, auto, unique
 
 import numpy as np
-from entities.boids.rules import (avoid_boids, keep_within_bounds,
-                                  limit_velocity)
+from entities.boids.rules import (avoid_boids, avoid_vegetation,
+                                  keep_within_bounds, limit_velocity)
 from entities.entity import Entity
 from numpy.random import default_rng
 
@@ -89,7 +89,7 @@ class Boid(Entity):
                               entities: list,
                               detection_range: float) -> list:
 
-        return list(filter(lambda e: self.is_entity_in_range(e, self.detection_range), entities))
+        return list(filter(lambda e: self.is_entity_in_range(e, detection_range), entities))
 
     def is_entity_in_range(self,
                            entity: any,
