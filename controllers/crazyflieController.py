@@ -64,8 +64,6 @@ class CrazyflieController(Controller):
     def __enter__(self):
         logger.debug("Starting swarm")
 
-        self.swarm.open_links()
-
         self.safety_checks()
 
         self.swarm_flying = False
@@ -84,10 +82,6 @@ class CrazyflieController(Controller):
         self.swarm.close_links()
 
         self.swarm_flying = False
-
-    @property
-    def PHYSICAL(self):
-        return self._PHYSICAL
 
     def safety_checks(self):
         """

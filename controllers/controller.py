@@ -12,9 +12,10 @@ class Controller(abc.ABC):
         self._positions = {uri: np.zeros(3) for uri in self.uris}
 
     @property
-    @abc.abstractmethod
     def PHYSICAL(self):
         """Denotes whether the system is physical or not"""
+
+        return self._PHYSICAL
 
     @property
     def positions(self):
