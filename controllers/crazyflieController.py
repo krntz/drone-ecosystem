@@ -4,9 +4,10 @@ from threading import Event
 
 import cflib.crtp
 import numpy as np
-import ReadWriteLighthouseCalibration
 from cflib.crazyflie.log import LogConfig
 from cflib.crazyflie.swarm import CachedCfFactory, Swarm
+from utils.lighthouseDataHelper import LighthouseDataHelper
+from utils.utils import FlightZone
 
 from controllers.controller import Controller
 
@@ -35,43 +36,30 @@ class CrazyflieController(Controller):
 
         cflib.crtp.init_drivers()
 
-        # Grab calibration data directly from drone
-        # if there is a file with saved calibration data, use that instead
-
-        # TODO: ReadMem opens and closes a link to a single drone, this is inefficient. Should be reading calibration data when the connection to the entire swarm has been setup
-
-        if len(self.uris) > 1:
-            try:
-                if config.startswith("radio://"):
-                    logger.info(
-                        "Getting calibration data from drone with URI: " + config)
-                    mem = ReadWriteLighthouseCalibration.ReadMem(config)
-                    geo_dict, calib_dict = mem.getGeoAndCalib()
-                else:
-                    logger.info(
-                        "Getting calibration data from file: " + config)
-                    geo_dict, calib_dict = ReadWriteLighthouseCalibration.ReadFromFile(
-                        config)
-            except Exception as e:
-                raise e
-        else:
-            logger.info("Only one drone found, assuming it is calibrated")
-
         factory = CachedCfFactory(rw_cache='./cache')
 
         self.swarm = Swarm(uris, factory=factory)
 
-        # Write calibration data to swarm
+        self.swarm.open_links()
 
         if len(self.uris) > 1:
-            logger.info("Writing calibration data to swarm")
-            args = {}
+            data_helper = LighthouseDataHelper()
 
-            for uri in self.uris:
-                args[uri] = [geo_dict, calib_dict]
+            input_is_drone = config.startswith("radio://")
 
-            self.swarm.parallel_safe(
-                ReadWriteLighthouseCalibration.WriteMem, args)
+            if input_is_drone:
+                data_helper.read_from_drone(self.swarm._cfs[config])
+            else:
+                data_helper.read_from_file(config)
+
+            # TODO: 2023-06-27 This write operation *should* be possible to do
+            # in parallel, but I think there's some sort of race condition.
+            # Sequential is fine for small swarms (~10 drones) so I haven't
+            # bothered fixing it, but for large swarms it might be
+            # worth looking into.
+            self.swarm.sequential(data_helper.write_to_drone)
+        else:
+            logger.debug("Only one drone found, assuming it is calibrated")
 
     def __enter__(self):
         logger.debug("Starting swarm")
