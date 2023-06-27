@@ -146,18 +146,19 @@ class LighthouseDataHelper:
             raise RuntimeError(
                 "No calibration data to write, need to read from drone/file first!")
 
-        # TODO: 2023-06-26 What is "i" here?
-        geo_dict = {i: geo.as_file_object()
-                    for i, geo in self._geometry_data.items()}
+        geo_dict = {lighthouse_num: geo.as_file_object()
+                    for lighthouse_num, geo in self._geometry_data.items()}
 
-        calib_dict = {i: calib.as_file_object()
-                      for i, calib in self._calibration_data.items()}
+        calib_dict = {lighthouse_num: calib.as_file_object()
+                      for lighthouse_num, calib in self._calibration_data.items()}
 
         file_dict = {"geos": geo_dict, "calibs": calib_dict}
 
         logger.info(f"Writing geometry and calibration data to {filename}")
         with open(filename, 'w') as f:
             yaml.dump(file_dict, f)
+
+        logger.info("Data written")
 
 
 def main() -> None:
