@@ -38,10 +38,8 @@ class LighthouseDataHelper:
         self._read_event.set()
 
     def _data_written_callback(self, success: bool) -> None:
-        if success:
-            print('Data written')
-        else:
-            print('Write failed')
+        if not success:
+            raise RuntimeError("Failed to write data!")
 
         self._write_event.set()
 
@@ -52,13 +50,20 @@ class LighthouseDataHelper:
 
         helper = LighthouseMemHelper(scf.cf)
 
+        logger.info(
+            f"Reading geometry data from drone with URI {scf.cf.link_uri}")
         helper.read_all_geos(self._geo_read_callback)
         self._read_event.wait()
 
         self._read_event.clear()
 
+        logger.info(
+            f"Reading calibration data from drone with URI {scf.cf.link_uri}")
         helper.read_all_calibs(self._calib_read_callback)
         self._read_event.wait()
+
+        logger.info("Data read")
+        self._read_event.clear()
 
     def read_from_file(self, filename: str) -> None:
         """
@@ -112,18 +117,21 @@ class LighthouseDataHelper:
 
         helper = LighthouseMemHelper(scf.cf)
 
-        logger.debug(
+        logger.info(
             f"Writing geometry data to drone with URI {scf.cf.link_uri}")
         helper.write_geos(self._geometry_data, self._data_written_callback)
         self._write_event.wait()
 
         self._write_event.clear()
 
-        logger.debug(
+        logger.info(
             f"Writing calibration data to drone with URI {scf.cf.link_uri}")
         helper.write_calibs(self._calibration_data,
                             self._data_written_callback)
         self._write_event.wait()
+
+        logger.info("Data written")
+        self._write_event.clear()
 
     def write_to_file(self, filename: str):
         """
@@ -147,47 +155,45 @@ class LighthouseDataHelper:
 
         file_dict = {"geos": geo_dict, "calibs": calib_dict}
 
-        logger.debug(f"Writing geometry and calibration data to {filename}")
+        logger.info(f"Writing geometry and calibration data to {filename}")
         with open(filename, 'w') as f:
             yaml.dump(file_dict, f)
 
 
 def main() -> None:
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
         description="Reads and/or writes calibration data from/to Crazyflie drones")
 
-    parser.add_argument('-i', '--input', required=True, dest='input',
+    parser.add_argument('-i', '--input', required=True, dest='input', type=str,
                         help='Input to read calibration data from, can be either ' +
                         'a local file or the URI of an already calibrated drone')
 
-    parser.add_argument('-o', '--output', required=True, dest='output',
+    parser.add_argument('-o', '--output', required=True, dest='output', type=str,
                         help='Output to write calibration data to, can be either a file or a drone')
 
     args = parser.parse_args()
 
     cflib.crtp.init_drivers()
 
-    read_mem = ReadMem()
+    lighthouse_data = LighthouseDataHelper()
 
     input_is_drone = args.input.startswith("radio://")
 
     if input_is_drone:
         with SyncCrazyflie(args.input, cf=Crazyflie(rw_cache='./cache')) as scf:
-            read_mem.from_drone(scf)
+            lighthouse_data.read_from_drone(scf)
     else:
         read_mem.from_file(args.input)
-
-    write_mem = WriteMem(read_mem.geo_data, read_mem.calib_data)
 
     output_is_drone = args.output.startswith("radio://")
 
     if output_is_drone:
         with SyncCrazyflie(args.output, cf=Crazyflie(rw_cache='./cache')) as scf:
-            write_mem.to_drone(scf)
+            lighthouse_data.write_to_drone(scf)
     else:
-        write_mem.to_file(args.output)
+        lighthouse_data.write_to_file(args.output)
 
 
 if __name__ == "__main__":

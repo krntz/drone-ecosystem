@@ -44,7 +44,7 @@ class CrazyflieSwarmControl:
         self.swarm.open_links()
 
         if len(self.uris) > 1:
-            data_helper = LighthouseData()
+            data_helper = LighthouseDataHelper()
 
             input_is_drone = config.startswith("radio://")
 
@@ -53,7 +53,12 @@ class CrazyflieSwarmControl:
             else:
                 data_helper.read_from_file(config)
 
-            self.swarm.parallel_safe(data_helper.write_to_drone)
+            # TODO: 2023-06-27 This write operation *should* be possible to do
+            # in parallel, but I think there's some sort of race condition.
+            # Sequential is fine for small swarms (~10 drones) so I haven't
+            # bothered fixing it, but for large swarms it might be
+            # worth looking into.
+            self.swarm.sequential(data_helper.write_to_drone)
         else:
             logger.debug("Only one drone found, assuming it is calibrated")
 
