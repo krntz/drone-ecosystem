@@ -71,36 +71,28 @@ class LighthouseDataHelper:
         """
 
         with open(filename, 'r') as f:
-            lighthouseConfig = yaml.safe_load(f)
+            lighthouse_config = yaml.safe_load(f)
 
-        lighthouse_calibration = lighthouseConfig["calibs"]
-        lighthouse_geometry = lighthouseConfig["geos"]
+        self._geometry_data = {}
+        self._calibration_data = {}
 
-        for i in range(len(lighthouse_geometry)):
-            geo = lighthouse_geometry[i]
-            bsGeo = LighthouseBsGeometry()
-            bsGeo.origin = geo["origin"]
-            bsGeo.rotation_matrix = geo["rotation"]
-            bsGeo.valid = True
+        lighthouse_calibration = lighthouse_config["calibs"]
+        lighthouse_geometry = lighthouse_config["geos"]
 
-            self.geo_dict[i] = bsGeo
+        logger.info(f"Reading geometry data from {filename}")
 
-        for i in range(len(lighthouse_calibration)):
-            calib = lighthouse_calibration[i]
-            bsCalib = LighthouseBsCalibration()
-            bsCalib.uid = calib["uid"]
-            bsCalib.valid = True
+        for lighthouse_num, geometry in lighthouse_geometry.items():
+            new_geometry = LighthouseBsGeometry.from_file_object(geometry)
+            self._geometry_data[lighthouse_num] = new_geometry
 
-            for j, sweep in enumerate(calib["sweeps"]):
-                bsCalib.sweeps[j].phase = sweep["phase"]
-                bsCalib.sweeps[j].tilt = sweep["tilt"]
-                bsCalib.sweeps[j].curve = sweep["curve"]
-                bsCalib.sweeps[j].gibmag = sweep["gibmag"]
-                bsCalib.sweeps[j].gibphase = sweep["gibphase"]
-                bsCalib.sweeps[j].ogeemag = sweep["ogeemag"]
-                bsCalib.sweeps[j].ogeephase = sweep["ogeephase"]
+        logger.info(f"Reading calibration data from {filename}")
 
-            self.calib_dict[i] = bsCalib
+        for lighthouse_num, calibration in lighthouse_calibration.items():
+            new_calibration = LighthouseBsCalibration.from_file_object(
+                calibration)
+            self._calibration_data[lighthouse_num] = new_calibration
+
+        logger.info("Data read")
 
     def write_to_drone(self, scf: SyncCrazyflie):
         """
@@ -186,7 +178,7 @@ def main() -> None:
         with SyncCrazyflie(args.input, cf=Crazyflie(rw_cache='./cache')) as scf:
             lighthouse_data.read_from_drone(scf)
     else:
-        read_mem.from_file(args.input)
+        lighthouse_data.read_from_file(args.input)
 
     output_is_drone = args.output.startswith("radio://")
 
