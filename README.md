@@ -2,7 +2,7 @@
 A control system for autonomous drones. Based on Boids model.
 
 # How it works...
-TBD
+TBA
 
 (Basically, boids with a sprinkle of edge computing for battery performance)
 
