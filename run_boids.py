@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
-        'radio://0/80/2M/E7E7E7E7E1',
+        # 'radio://0/80/2M/E7E7E7E7E1',
         # 'radio://0/80/2M/E7E7E7E7E2',
         # 'radio://0/80/2M/E7E7E7E7E3',
         # 'radio://0/80/2M/E7E7E7E7E4',
@@ -28,6 +28,8 @@ if __name__ == '__main__':
     boid_cohesion = 0.1
     visual_range = 1
 
+    update_rate = 1.0/60
+
     drones = [
         StandardBoid(uri,
                      flight_zone,
@@ -38,9 +40,8 @@ if __name__ == '__main__':
 
         for uri in uris]
 
-    time_step = 1
-
     with CrazyflieController(uris, flight_zone, 'radio://0/80/2M/E7E7E7E7E0') as swarmController:
-        boidManager = BoidManager(swarmController, flight_zone, drones)
+        boidManager = BoidManager(
+            update_rate, swarmController, flight_zone, drones)
 
-        boidManager.boid_loop(time_step)
+        boidManager.boid_loop()

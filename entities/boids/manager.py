@@ -12,14 +12,17 @@ Can handle either physical (drones) or virtual (3d or text-based) representation
 
 class BoidManager:
     def __init__(self,
+                 update_rate: float,
                  controller: any,
                  flight_zone: any,
                  boids: list) -> None:
         """
+        :param update_rate: the rate at which the main loop is run
         :param controller: controller interface object
         :param flight_zone: dimensions of the flight zone
         :param boids: List of boid-objects
         """
+        self._update_rate = update_rate
         self.controller = controller
 
         self.flight_zone = flight_zone
@@ -58,21 +61,24 @@ class BoidManager:
 
         self.controller.set_swarm_velocities(velocities, yaw_rate)
 
-    def boid_loop(self, time_step: float | None = None) -> None:
+    def boid_loop(self) -> None:
         """
         Starts the control loop that runs the boid behaviour
         """
 
         if self.controller.PHYSICAL:
             logger.info("Using physical system")
-            # self.distribute_swarm()
         else:
             logger.info("Using virtual system")
-            # self.update_positions(self.positions, 0)
 
         self.flying = True
 
+        last_tick = time.time()
+
         while self.flying:
+            start = time.time()
+            delta_time = start - last_tick
+
             current_positions = self.controller.positions
 
             # TODO: 2023-06-12 This feels inefficient...
@@ -84,10 +90,10 @@ class BoidManager:
                 # TODO: Make parallel
 
                 boid.perceive(self.boids)
-                boid.update(time_step)
+                boid.update(delta_time)
 
             # set the boids moving
             self.update_velocities(self.velocities, 0)
 
-            if time_step is not None:
-                time.sleep(time_step)
+            last_tick = time.time()
+            time.sleep(max(self._update_rate - (time.time() - start), 0))

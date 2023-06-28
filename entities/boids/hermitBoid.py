@@ -25,7 +25,7 @@ class HermitBoid(Boid):
 
         self._type = BoidTypes.HERMIT
 
-    def update(self, time_step: float) -> None:
+    def update(self, delta_time: float) -> None:
         match self.state:
             case self.States.ROAMING:
                 # TODO: What does the Hermit do when roaming?
@@ -34,4 +34,4 @@ class HermitBoid(Boid):
                 # TODO: Hermit should move towards the closest active Spore
                 pass
 
-        super().update(time_step)
+        super().update(delta_time)

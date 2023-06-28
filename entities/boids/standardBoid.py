@@ -24,22 +24,19 @@ class StandardBoid(Boid):
 
         self._type = BoidTypes.STANDARD
 
-    def update(self, time_step):
+    def update(self, delta_time):
         """
         Takes the positions of all boids in the swarm, converts them to distances
         to the current boid, and figures out how to change the position
         for the next time step
         """
 
-        logger.debug("Running rules for boid with id " + self.uid)
+        logger.debug(f"Running rules for boid with id {self.uid}")
 
-        fly_towards_center(self, self.detected_boids)
-        match_velocity(self, self.detected_boids)
+        fly_towards_center(self, self.detected_boids, delta_time)
+        match_velocity(self, self.detected_boids, delta_time)
 
-        logger.debug("New velocity for boid with id " + self.uid)
-        logger.debug(self.velocity)
+        logger.debug(
+            f"New velocity for boid with id {self.uid}: {self.velocity}")
 
-        logger.debug("New position for boid with id " + self.uid)
-        logger.debug(self.position)
-
-        super().update(time_step)
+        super().update(delta_time)

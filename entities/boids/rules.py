@@ -1,14 +1,14 @@
-import math
-
 import numpy as np
 
 
-def fly_towards_center(boid: any, other_boids: list) -> None:
+def fly_towards_center(boid: any, other_boids: list, delta_time: float) -> None:
     """
     Rule 1 in the standard boids model
 
     Boids should steer towards the center of the other boids (if any)
     """
+
+    cohesion = boid.cohesion * delta_time
 
     if other_boids:
         center = np.zeros(3)
@@ -18,11 +18,11 @@ def fly_towards_center(boid: any, other_boids: list) -> None:
 
         center /= len(other_boids)
 
-        boid.velocity += (center - boid.position) * boid.cohesion
+        boid.velocity += (center - boid.position) * cohesion
         boid.yaw_rate = boid.yaw_rate
 
 
-def avoid_others(boid: any) -> None:
+def avoid_others(boid: any, delta_time: float) -> None:
     """
     Rule 2 in the standard boids model
 
@@ -32,6 +32,7 @@ def avoid_others(boid: any) -> None:
     # Boids outside visual range are not close enough to collide
 
     if boid.detected_boids:
+        separation = boid.separation * delta_time
         move = np.zeros(3)
 
         close_boids = filter(
@@ -43,11 +44,11 @@ def avoid_others(boid: any) -> None:
         for b in close_boids:
             move += boid.position - b.position
 
-        boid.velocity += move * boid.separation
+        boid.velocity += move * separation
         boid.yaw_rate = boid.yaw_rate
 
 
-def match_velocity(boid: any, other_boids: list) -> None:
+def match_velocity(boid: any, other_boids: list, delta_time: float) -> None:
     """
     Rule 3 in the standard boids model
 
@@ -55,28 +56,31 @@ def match_velocity(boid: any, other_boids: list) -> None:
     """
 
     if other_boids:
+        alignment = boid.alignment * delta_time
         average_velocity = np.zeros(3)
 
         for b in other_boids:
             average_velocity += b.velocity
 
         average_velocity /= len(other_boids)
-        boid.velocity += (average_velocity - boid.velocity) * boid.alignment
+        boid.velocity += (average_velocity - boid.velocity) * alignment
 
 
 def limit_velocity(boid: any) -> None:
-    # TODO: Should take into account the time per each step to ensure we aren't trying to move too fast
+    """
+    Clamps the speed of the boid to be within its min and max speed.
+    """
 
-    speed_limit = 0.25
+    speed = np.linalg.norm(boid.velocity)
 
-    speed = math.sqrt(np.sum(boid.velocity ** 2))
+    heading = boid.velocity / speed
 
-    if speed > speed_limit:
-        boid.velocity = (boid.velocity / speed) * speed_limit
-        boid.yaw_rate = boid.yaw_rate
+    speed = np.clip(speed, boid.min_speed, boid.max_speed)
+
+    boid.velocity = heading * speed
 
 
-def keep_within_bounds(boid: any) -> None:
+def keep_within_bounds(boid: any, delta_time: float) -> None:
     min_x = -boid.flight_zone.x/2
     max_x = boid.flight_zone.x/2
 
@@ -88,9 +92,7 @@ def keep_within_bounds(boid: any) -> None:
 
     buffer = 0.2
 
-    turning_factor = 0.1
-
-    # TODO: Scale velocity so the drone turns faster the further out-of-bounds it is
+    turning_factor = 0.1 * delta_time
 
     if boid.position[0] > (max_x - buffer):
         boid.velocity[0] -= turning_factor

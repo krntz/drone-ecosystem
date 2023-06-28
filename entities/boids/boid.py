@@ -33,16 +33,14 @@ class Boid(Entity):
 
         rng = default_rng()
 
-        self.position = rng.random(3) * np.array([
-            (self.flight_zone.x - 0.2) - (self.flight_zone.x - 0.2) / 2,
-            (self.flight_zone.y - 0.2) - (self.flight_zone.y - 0.2) / 2,
-            self.flight_zone.z + self.flight_zone.floor_offset
-        ])
-
+        self.position = np.zeros(3)
         self.yaw = 0
 
-        self.velocity = rng.random(3) * (0.75 - (0.75 / 2))
+        self.velocity = rng.random(3) * (0.25 - (0.25 * 2))
         self.yaw_rate = 0
+
+        self.min_speed = 0.0001
+        self.max_speed = 0.25
 
         self.separation = separation
 
@@ -91,7 +89,7 @@ class Boid(Entity):
         Returns euclidean distance between the Boid's own position and some point
         """
 
-        return math.sqrt(np.sum((self.position - point) ** 2))
+        return np.linalg.norm(self.position - point)
 
     def distance_to_swarm(self, swarm: list) -> list:
         """
@@ -109,11 +107,11 @@ class Boid(Entity):
 
         self.update_detected_boids(boids)
 
-    def update(self, time_step: float) -> None:
+    def update(self, delta_time: float) -> None:
         """
         Updates the boids state based on the current world state.
         """
 
-        avoid_others(self)
-        keep_within_bounds(self)
+        avoid_others(self, delta_time)
+        keep_within_bounds(self, delta_time)
         limit_velocity(self)

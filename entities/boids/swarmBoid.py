@@ -34,13 +34,13 @@ class SwarmBoid(Boid):
 
         # TODO: Perceive flowers
 
-    def update(self, time_step: float) -> None:
-        fly_towards_center(self, self.detected_swarm_boids)
+    def update(self, delta_time: float) -> None:
+        fly_towards_center(self, self.detected_swarm_boids, delta_time)
 
-        match_velocity(self, self.detected_swarm_boids)
+        match_velocity(self, self.detected_swarm_boids, delta_time)
 
         if self.detected_inactive_flowers:
             # find the closest inactive flower and move towards that
             pass
 
-        super().update(time_step)
+        super().update(delta_time)
