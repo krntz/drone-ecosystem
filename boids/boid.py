@@ -18,33 +18,32 @@ class Boid:
     def __init__(self,
                  flight_zone,
                  uid,
+                 update_rate,
                  boid_separation,
                  boid_alignment,
                  boid_cohesion,
-                 visual_range,
-                 time_step = None):
+                 visual_range):
 
         self.flight_zone = flight_zone
         self._uid = uid
+        self.update_rate = update_rate
 
-        self._position = np.zeros(3)
+        self.position = np.zeros(3)
         self.yaw = 0
 
-        self._velocity = np.zeros(3)
+        self.velocity = np.zeros(3)
         self.yaw_rate = 0
 
-        self.boid_separation = boid_separation  # Percentage
+        self.min_speed = 0.001
+        self.max_speed = 0.25
+
         self.minimum_distance = 0.3
 
+        self.boid_separation = boid_separation
         self.boid_alignment = boid_alignment
         self.boid_cohesion = boid_cohesion
 
         self.visual_range = visual_range
-        
-        if time_step is not None:
-            self.time_step = time_step
-        else:
-            self.time_step = 1
 
     def random_init(self):
         rng = default_rng()
@@ -57,11 +56,11 @@ class Boid:
 
         self.yaw = 0
 
-        self.velocity = (rng.random(3) * (0.75 - (0.75 / 2)))# / self.time_step
+        self.velocity = (rng.random(3) * self.max_speed) - (self.max_speed * 2)
         self.yaw_rate = 0
 
     def distance_to_boid(self, boid_position):
-        return math.sqrt(np.sum((self.position - boid_position) ** 2))
+        return np.linalg.norm(self.position - boid_position)
 
     def distance_to_swarm(self, boid_positions):
         """
@@ -74,23 +73,7 @@ class Boid:
     def uid(self):
         return self._uid
 
-    @property
-    def position(self):
-        return self._position
-
-    @position.setter
-    def position(self, position):
-        self._position = position
-
-    @property
-    def velocity(self):
-        return self._velocity
-
-    @velocity.setter
-    def velocity(self, velocity):
-        self._velocity = velocity
-
-    def set_new_velocity(self, other_boids, time_step):
+    def set_new_velocity(self, other_boids, delta_time):
         """
         Takes the positions of all boids in the swarm, converts them to distances
         to the current boid, and figures out how to change the position
@@ -99,17 +82,14 @@ class Boid:
 
         logger.debug("Running rules for boid with id " + self.uid)
         # Rule 1
-        fly_towards_center(self, other_boids)
+        fly_towards_center(self, other_boids, delta_time)
         # Rule 2
-        avoid_others(self, other_boids)
+        avoid_others(self, other_boids, delta_time)
         # Rule 3
-        match_velocity(self, other_boids)
+        match_velocity(self, other_boids, delta_time)
 
-        keep_within_bounds(self)
+        keep_within_bounds(self, delta_time)
         limit_velocity(self)
 
-        logger.debug("New velocity for boid with id " + self.uid)
-        logger.debug(self.velocity)
-
-        logger.debug("New position for boid with id " + self.uid)
-        logger.debug(self.position)
+        logger.debug(
+            f"New velocity for boid with id {self.uid}: {self.velocity}")

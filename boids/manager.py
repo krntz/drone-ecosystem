@@ -13,7 +13,7 @@ Can handle either physical (drones) or virtual (3d or text-based) representation
 
 
 class BoidManager:
-    def __init__(self, controller, flight_zone, boids, time_step=None):
+    def __init__(self, controller, flight_zone, boids, update_rate):
         """
         :param controller: controller interface object
         :param flight_zone: dimensions of the flight zone
@@ -24,6 +24,7 @@ class BoidManager:
         # if the controller does not provide the attribute PHYSICAL,
         # we do not know if the system should use a physical representation or not.
         # physical representations require assumptions about movement times, etc.
+
         if not hasattr(self.controller, 'PHYSICAL'):
             raise Exception(
                 "Controller {} does not contain required information about physicallity of the system, exiting...".format(self.controller.__name___))
@@ -32,7 +33,7 @@ class BoidManager:
 
         self.flying = False
 
-        self.time_step = time_step
+        self.update_rate = update_rate
 
         self.boids = boids
 
@@ -59,10 +60,7 @@ class BoidManager:
         Updates the velocities of the boids
         """
 
-        # convert velocities from m/time_step to m/s
-
-        if self.time_step is not None:
-            velocities = {uid: vel * (1 / self.time_step) for uid, vel in velocities.items()}
+        velocities = {uid: vel for uid, vel in velocities.items()}
 
         self.controller.set_swarm_velocities(velocities, yaw_rate)
 
@@ -115,14 +113,19 @@ class BoidManager:
 
         if self.controller.PHYSICAL:
             logger.info("Using physical system")
-            #self.distribute_swarm()
+            # self.distribute_swarm()
         else:
             logger.info("Using virtual system")
-            #self.update_positions(self.positions, 0)
+            # self.update_positions(self.positions, 0)
 
         self.flying = True
 
+        last_tick = time.time()
+
         while self.flying:
+            start = time.time()
+            delta_time = start - last_tick
+
             current_positions = self.controller.swarm_positions
 
             for boid in self.boids:
@@ -134,10 +137,10 @@ class BoidManager:
                 other_boids = [
                     other_boid for other_boid in self.boids if other_boid.uid is not boid.uid]
 
-                boid.set_new_velocity(other_boids, self.time_step)
+                boid.set_new_velocity(other_boids, delta_time)
 
             # set the boids moving
             self.update_velocities(self.velocities, 0)
 
-            if self.time_step is not None:
-                time.sleep(self.time_step)
+            last_tick = time.time()
+            time.sleep(max(self.update_rate - (time.time() - start), 0))

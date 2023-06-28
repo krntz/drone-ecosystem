@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     uris = {
         'radio://0/80/2M/E7E7E7E7E0',
-        #'radio://0/80/2M/E7E7E7E7E1',
-        #'radio://0/80/2M/E7E7E7E7E2',
-        #'radio://0/80/2M/E7E7E7E7E3',
-        #'radio://0/80/2M/E7E7E7E7E4',
-        #'radio://0/80/2M/E7E7E7E7E5',
-        #'radio://0/80/2M/E7E7E7E7E6',
-        #'radio://0/80/2M/E7E7E7E7E7',
-        #'radio://0/80/2M/E7E7E7E7E8',
+        'radio://0/80/2M/E7E7E7E7E1',
+        'radio://0/80/2M/E7E7E7E7E2',
+        # 'radio://0/80/2M/E7E7E7E7E3',
+        # 'radio://0/80/2M/E7E7E7E7E4',
+        # 'radio://0/80/2M/E7E7E7E7E5',
+        # 'radio://0/80/2M/E7E7E7E7E6',
+        # 'radio://0/80/2M/E7E7E7E7E7',
+        # 'radio://0/80/2M/E7E7E7E7E8',
     }
 
     logging.basicConfig(level=logging.DEBUG)
@@ -28,26 +28,26 @@ if __name__ == '__main__':
     boid_cohesion = 0.1
     visual_range = 1
 
-    time_step = 0.1
+    update_rate = 1.0/60
 
     drones = [
         Boid(flight_zone,
              uri,
+             update_rate,
              boid_separation,
              boid_alignment,
              boid_cohesion,
-             visual_range,
-             time_step)
+             visual_range)
 
         for uri in uris]
-
 
     try:
         swarmControl = CrazyflieSwarmControl(uris,
                                              flight_zone,
                                              'radio://0/80/2M/E7E7E7E7E0')
 
-        boidManager = BoidManager(swarmControl, flight_zone, drones, time_step)
+        boidManager = BoidManager(
+            swarmControl, flight_zone, drones, update_rate)
 
         boidManager.boid_loop()
     except KeyboardInterrupt:
