@@ -90,10 +90,11 @@ class WorldManager:
             logger.info("Using virtual system")
 
         last_tick = time.time()
+
         while True:
             start = time.time()
             delta_time = start - last_tick
-            current_positions = self.controller.swarm_positions
+            current_positions = self.controller.positions
 
             # TODO: 2023-06-12 Looping over self.boids twice feels inefficient
 
@@ -119,8 +120,6 @@ class WorldManager:
 
             # set the boids moving
             self.update_velocities(self.boid_velocities, 0)
-
-            # TODO: Make default time_step 0 instead to avoid this if-statement
 
             last_tick = time.time()
             time.sleep(max(self._update_rate - (time.time() - start), 0))

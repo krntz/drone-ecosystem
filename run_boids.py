@@ -57,4 +57,4 @@ if __name__ == '__main__':
                                     boids,
                                     vegetation)
 
-        worldManager.world_loop(update_rate)
+        worldManager.world_loop()
