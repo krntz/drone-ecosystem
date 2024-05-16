@@ -3,7 +3,7 @@ import logging
 from controllers.crazyflieController import CrazyflieController
 from entities.boids.manager import BoidManager
 from entities.boids.standardBoid import StandardBoid
-from utils.utils import FlightZone
+from controllers.utils.utils import FlightZone
 
 logger = logging.getLogger(__name__)
 
