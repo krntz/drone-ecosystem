@@ -1,3 +1,6 @@
--e git+https://github.com/bitcraze/crazyflie-clients-python@2378be3d38a4371736c7ad5fba26e9a35ea4966f#egg=cfclient
-numpy==1.24.3
-PyYAML==5.4.1
+-e git+https://github.com/bitcraze/crazyflie-lib-python.git@c7eaabe31612e796fcdcf8511c18d197051e17cd#egg=cflib
+libusb-package==1.0.26.1
+numpy==1.26.4
+pyusb==1.2.1
+PyYAML==6.0.1
+scipy==1.13.0
